@@ -39,14 +39,14 @@ MyClass.y = 'Life';
 
 ## Module API <small>(For Node and the browser)</small>
 
-### javaToJs(javaString, options?, progress?)
+### javaToJavascript(javaString, options?, progress?)
 ```js
 // Node:
-var javaToJs = require('java-to-javascript');
-// Browser script (https://cdn.rawgit.com/wyattades/java-to-javascript/build/java-to-javascript.min.js):
-var javaToJs = window.javaToJavascript;
+var javaToJavascript = require('java-to-javascript');
+// OR Browser script:
+var javaToJavascript = window.javaToJavascript;
 
-var jsString = javaToJs( /* params */ );
+var jsString = javaToJavascript( /* params */ );
 ```
 
 **Returns**: <code>string</code> - - Converted JavaScript  
@@ -122,6 +122,9 @@ __Included Polyfills__: `List`, `ArrayList`
   ```
 - `static` has no effect on class methods
 - Nested classes aren't converted
+
+## CDN
+Unpkg: https://unpkg.com/java-to-javascript@latest/build/java-to-javascript.min.js
 
 ## DISCLAIMER
 Not all Java features are supported, and some are too difficult to translate to JS, so make sure to check the JS code afterwards.
