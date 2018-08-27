@@ -1,1 +1,3 @@
 examples/
+.vscode/
+gulpfile.js
