@@ -115,7 +115,7 @@ const updateOptions = (e) => {
   let val;
   if (key === 'p5') val = el.checked;
   else if (key === 'globalScope') val = el.value;
-  else {
+  else if (key === 'globalVars') {
     try {
       const _val = JSON.parse(el.value);
       if (_val && typeof _val === 'object') val = _val;
@@ -125,7 +125,14 @@ const updateOptions = (e) => {
   window.localStorage.setItem('java2js-options', JSON.stringify(options));
   convert();
 };
-document.querySelectorAll('#menu input').forEach((el) => {
+document.querySelectorAll('#menu [name]').forEach((el) => {
+  const key = el.getAttribute('name');
+  if (options[key]) {
+    if (key === 'p5') el.checked = !!options[key];
+    else if (key === 'globalScope') el.value = options[key]
+    else if (key === 'globalVars') el.value = JSON.stringify(options[key]);
+  }
+
   el.addEventListener('change', updateOptions);
 });
 
