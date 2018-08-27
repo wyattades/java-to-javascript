@@ -47,7 +47,17 @@ aside textarea {
   left: 0;
   height: 3px;
   width: 0;
-  transition: width ease 0.5s;
+}
+#progress.easing {
+  transition: width cubic-bezier(0.215, 0.61, 0.355, 1) 0.5s;
+}
+#progress.easing.start {
+  transition-duration: 28s;
+}
+#progress.error {
+  background: red;
+  width: 100% !important;
+  transition: none;
 }
 main {
   grid-area: main;
@@ -112,6 +122,5 @@ body {
   }
   #editors > * {
     border-top: 1px solid grey;
-    /* box-sizing: border-box; */
   }
 }
