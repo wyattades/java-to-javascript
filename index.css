@@ -1,0 +1,119 @@
+html {
+  /* font-family: 'M PLUS Rounded 1c', sans-serif;  */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  /* font-family: monospace; */
+}
+
+h1 {
+  margin: 0;
+  margin-right: auto;
+  color: #fffc49;
+  font-size: 24px;
+}
+header {
+  grid-area: header;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 14px;
+  background-color: #323330;
+}
+header a {
+  color: #ffffffcc;
+  margin-left: 16px;
+}
+aside {
+  grid-area: menu;
+  width: 150px;
+  padding: 8px;
+  /* background: #21252b; */
+  /* color: #a7a7a7; */
+  font-size: 14px;
+}
+aside > * {
+  display: block;
+  margin-bottom: 16px;
+}
+aside input:not([type='checkbox']), aside textarea {
+  width: 100%;
+}
+aside textarea {
+  resize: vertical;
+  min-height: 160px;
+}
+#progress {
+  background: #089708;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 0;
+  transition: width ease 0.5s;
+}
+main {
+  grid-area: main;
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+#editors {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  min-width: 0;
+}
+#editors > * {
+  flex: 0 0 50%;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch;
+}
+
+#error {
+  background-color: #fff0f0;
+  color: red;
+  border-top: 1px solid #ffd6d6;
+  padding: 4px 6px;
+  display: none;
+}
+#error.active {
+  display: block;
+}
+
+.section {
+  display: flex;
+  flex-basis: 100%;
+  max-width: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.CodeMirror {
+  flex: 1;
+}
+.CodeMirror-placeholder {
+  color: #a7a7a7 !important;
+}
+
+@media(max-width: 900px) {
+  main, #editors {
+    flex-direction: column;
+    min-width: auto;
+  }
+  #editors > * {
+    border-top: 1px solid grey;
+    /* box-sizing: border-box; */
+  }
+}
