@@ -3,14 +3,15 @@
   "version": "0.1.1",
   "description": "Convert Java Classes to ES6 Classes",
   "license": "MIT",
-  "bin": "cli.js",
   "module": "index.js",
-  "main": "build/index.js",
+  "main": "build/java-to-javascript.min.js",
+  "bin": "cli.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/wyattades/java-to-js"
+    "url": "https://github.com/wyattades/java-to-javascript"
   },
   "scripts": {
+    "build": "gulp build",
     "examples": "bash -c 'for file in ./examples/*.java; do node ./cli.js $file $([[ \"$file\" = *\"p5\"* ]] && echo --p5); done'"
   },
   "dependencies": {
@@ -21,7 +22,7 @@
   "devDependencies": {
     "@babel/core": "^7.0.0-rc.3",
     "@babel/preset-env": "^7.0.0-rc.3",
-    "babelify": "^8.0.0",
+    "babelify": "^9.0.0",
     "browserify": "^16.2.2",
     "gulp": "^4.0.0",
     "gulp-rename": "^1.4.0",

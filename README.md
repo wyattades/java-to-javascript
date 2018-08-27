@@ -43,9 +43,7 @@ MyClass.y = 'Life';
 ```js
 // Node:
 var javaToJs = require('java-to-javascript');
-// Browser module:
-import javaToJs from 'java-to-javascript';
-// Browser script:
+// Browser script (https://cdn.rawgit.com/wyattades/java-to-javascript/build/java-to-javascript.min.js):
 var javaToJs = window.javaToJavascript;
 
 var jsString = javaToJs( /* params */ );
@@ -66,7 +64,7 @@ var jsString = javaToJs( /* params */ );
 ```bash
 Usage: java-to-javascript [options] <input_file>
 
-Convert a Java file to a ES6 JavaScript file
+Convert a Java file to an ES6 JavaScript file
 
 Options:
 

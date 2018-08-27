@@ -7,11 +7,13 @@ const uglify = require('gulp-uglify');
 const sourcemaps = require('gulp-sourcemaps');
 
 
+const DEST = './build';
+
 gulp.task('build', () => (
   browserify({
     entries: './index.js',
     standalone: 'javaToJavascript',
-    debug: true,
+    // debug: true,
   })
   .transform('babelify', {
     presets: ['@babel/preset-env'],
@@ -23,12 +25,13 @@ gulp.task('build', () => (
     this.emit('end');
   })
   .pipe(source('java-to-javascript.js'))
-  // .pipe(gulp.dest('./build'))
   .pipe(buffer())
   .pipe(sourcemaps.init({ loadMaps: true }))
+  .pipe(gulp.dest(DEST))
   .pipe(uglify())
   .pipe(rename({ extname: '.min.js' }))
-  .pipe(gulp.dest('./build'))
+  .pipe(sourcemaps.write('./'))
+  .pipe(gulp.dest(DEST))
 ));
 
-gulp.task('default', ['build']);
+gulp.task('default', gulp.series('build'));

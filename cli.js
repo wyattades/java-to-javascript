@@ -6,7 +6,7 @@ const javaToJs = require('./index');
 
 program
 .version(require('./package.json').version)
-.description('Convert a Java file to a ES6 JavaScript file')
+.description('Convert a Java file to an ES6 JavaScript file')
 .arguments('<input_file>')
 .option('-o, --output <file>', 'Specifies the output filename. (Default is the input filename with a .js extension)')
 .option('--p5', 'Sets `scope` to "p5", and adds p5 variable mappings to `globals`')
