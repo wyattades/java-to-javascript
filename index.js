@@ -251,6 +251,8 @@ const convertLiteralMethodsToCasts = (str) => {
  * @return {string} - Converted JavaScript
  */
 const javaToJs = (javaString, options = {}, progress) => {
+  if (typeof javaString !== 'string') throw 'java-to-javascript: First argument must be a string';
+
   if (options.globalVars) opts.globalVars = options.globalVars;
   if (options.globalScope) opts.globalScope = options.globalScope;
   if (options.p5) {

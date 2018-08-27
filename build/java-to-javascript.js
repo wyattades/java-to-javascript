@@ -501,6 +501,7 @@ var convertLiteralMethodsToCasts = function convertLiteralMethodsToCasts(str) {
 var javaToJs = function javaToJs(javaString) {
   var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   var progress = arguments.length > 2 ? arguments[2] : undefined;
+  if (typeof javaString !== 'string') throw 'java-to-javascript: First argument must be a string';
   if (options.globalVars) opts.globalVars = options.globalVars;
   if (options.globalScope) opts.globalScope = options.globalScope;
 
