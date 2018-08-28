@@ -250,7 +250,7 @@ void keyReleased() {
     p.right = false;
   }
   if (key == ' ') {
-    if ((game == dead == false) || (game == dead == true)) {
+    if ((game == false && dead == false) || (game == false && dead == true)) {
       setupGame();
     }
   }

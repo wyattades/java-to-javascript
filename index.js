@@ -6,6 +6,8 @@ const javaParser = require('java-parser');
 const beautify = require('js-beautify/js/lib/beautify');
 const p5_options = require('./p5_options');
 
+const DEV = process.env.NODE_ENV === 'development';
+
 
 const opts = {
   beautifyOptions: {
@@ -15,11 +17,29 @@ const opts = {
   globalScope: null,
 };
 
+
+const literalInitializers = {
+  int: '0',
+  float: '0',
+  double: '0',
+  short: '0',
+  long: '0',
+  char: '\'\'',
+  boolean: 'false',
+};
+
+const unhandledNode = (node) => {
+  const msg = `Unhandled node: ${node.node}`;
+  if (DEV) throw msg;
+  else console.error(msg);
+  return '';
+};
+
 const joinStatements = (stats) => `${stats.join(';')}${stats.length ? ';' : ''}`;
 
-const varToString = ({ name, value, final }, noLet) => {
-  const assignment = value ? `${name} = ${value}` : `${name}`;
-  return `${noLet !== true ? (final ? 'const ' : 'let ') : ''}${assignment}`;
+const varToString = ({ name, value, type, final }, noLet) => {
+  if (value === undefined) value = literalInitializers[type] || 'null';
+  return `${noLet !== true ? (final ? 'const ' : 'let ') : ''}${name} = ${value}`;
 };
 
 const parseClass = (class_, isGlobal) => {
@@ -41,6 +61,14 @@ const parseClass = (class_, isGlobal) => {
     }
     return name;
   };
+
+  const parseType = (type) => {
+    if (type.node === 'ArrayType') return 'Array'; // Doesn't matter what we return, we don't use it
+    else if (type.node === 'SimpleType') return type.name.identifier;
+    else if (type.node === 'PrimitiveType') return type.primitiveTypeCode;
+    else if (type.node === 'ParameterizedType') return parseType(type.type);
+    else return unhandledNode(type);
+  };
   
   const parseExpr = (expr, isTop) => {
     if (!expr) return undefined;
@@ -49,7 +77,7 @@ const parseClass = (class_, isGlobal) => {
       case 'ThisExpression':
         return 'this';
       case 'NullLiteral':
-        return 'undefined'; // Unassigned objects (null) -> unassigned variables (undefined)
+        return 'null';
       case 'BooleanLiteral':
         return expr.booleanValue;
       case 'NumberLiteral':
@@ -61,6 +89,8 @@ const parseClass = (class_, isGlobal) => {
       case 'CastExpression':
         // TODO: use expr.type to convert?
         return parseExpr(expr.expression);
+      case 'ConditionalExpression':
+        return `${parseExpr(expr.expression)} ? ${parseExpr(expr.thenExpression)} : ${parseExpr(expr.elseExpression)}`;
       case 'SimpleName':
         return assignParent(expr.identifier);
       case 'QualifiedName':
@@ -80,7 +110,7 @@ const parseClass = (class_, isGlobal) => {
       case 'SuperMethodInvocation':
         return `super.${expr.name.identifier}(${expr.arguments.map(parseExpr)})`;
       case 'ClassInstanceCreation':
-        return `new ${expr.type.name ? expr.type.name.identifier : expr.type.type.name.identifier}(${expr.arguments.map(parseExpr)})`;
+        return `new ${parseType(expr.type)}(${expr.arguments.map(parseExpr)})`;
       case 'PostfixExpression':
         return `${parseExpr(expr.operand)}${expr.operator}`;
       case 'PrefixExpression':
@@ -95,33 +125,40 @@ const parseClass = (class_, isGlobal) => {
         return `${expr.array.identifier}[${parseExpr(expr.index)}]`;
       case 'ParenthesizedExpression':
         return `(${parseExpr(expr.expression)})`
-      default: throw `weird expr: ${expr.node}`;
+      default: return unhandledNode(expr);
     }
+  };
+
+  const parseModifiers = (modifiers) => {
+    const mods = {};
+    for (const mod of modifiers) {
+      if (mod.keyword === 'static') mods.static = true;
+      else if (mod.keyword === 'final') mods.final = true;
+    }
+    return mods;
   };
   
   const parseFieldVars = (field) => {
     const vars = [];
-    const modifiers = {};
-    for (const modifier of field.modifiers) {
-      if (modifier.keyword === 'static') modifiers.static = true;
-      else if (modifier.keyword === 'final') modifiers.final = true;
-      // else throw `weird modifier: ${modifier}`;
-    }
+    const data = parseModifiers(field.modifiers);
+    data.type = parseType(field.type);
+
     for (const frag of field.fragments) {
       if (frag.node === 'VariableDeclarationFragment') {
         vars.push(Object.assign({
           name: frag.name.identifier,
           value: parseExpr(frag.initializer, true),
-        }, modifiers));
-      } else throw `weird frag: ${frag.node}`;
+        }, data));
+      } else unhandledNode(frag);
     }
+
     return vars;
   };
 
   const parseStatement = (stat) => {
     switch (stat.node) {
       case 'ExpressionStatement':
-        return (parseExpr(stat.expression, true));
+        return parseExpr(stat.expression, true);
       case 'VariableDeclarationStatement':
         return parseFieldVars(stat).map(varToString);
       case 'ReturnStatement':
@@ -141,7 +178,7 @@ const parseClass = (class_, isGlobal) => {
         for (const clause of stat.catchClauses) tryBlock += ` catch (${clause.exception.name.identifier}) {${parseBlock(clause.body)}}`; // TODO handle exception types?
         if (stat.finally) tryBlock += ` finally {${parseBlock(stat.finally)}}`;
         return tryBlock;
-      default: throw `weird statement: ${stat.node}`;
+      default: return unhandledNode(stat);;
     }
   };
 
@@ -162,15 +199,14 @@ const parseClass = (class_, isGlobal) => {
   };
   
   const parseMethod = (method) => {
-    const data = {
+    const data = Object.assign({
       name: method.name.identifier,
       parameters: [],
-      block: null,
-    };
+    }, parseModifiers(method.modifiers));
   
     for (const param of method.parameters) {
       if (param.node === 'SingleVariableDeclaration') data.parameters.push(param.name.identifier);
-      else throw `weird param: ${param.node}`;
+      else unhandledNode(block);
     }
   
     data.block = parseBlock(method.body);
@@ -181,44 +217,47 @@ const parseClass = (class_, isGlobal) => {
   for (const dec of class_.bodyDeclarations) {
     if (dec.node === 'FieldDeclaration') {
       classData.vars.push(...parseFieldVars(dec));
+    } else if (dec.node === 'MethodDeclaration' && !dec.constructor && isGlobal !== true) {
+      classVarsMap[dec.name.identifier] = true;
     }
   }
 
   if (isGlobal !== true) {
     for (const var_ of classData.vars) classVarsMap[var_.name] = true;
   }
+  
 
   for (const dec of class_.bodyDeclarations) {
     if (dec.node === 'TypeDeclaration') classData.classes.push(parseClass(dec));
     else if (dec.node === 'MethodDeclaration') {
       if (dec.constructor) classData.constructor = parseMethod(dec);
       else classData.methods.push(parseMethod(dec));
-    } else if (dec.node !== 'FieldDeclaration') throw `weird body: ${dec.node}`;
+    } else if (dec.node !== 'FieldDeclaration') unhandledNode(dec);
   }
 
   return classData;
 };
 
 const classToJs = ({ name: className, vars, constructor: con, methods }) => {
-  const join = [];
-  
-  let initVars = '';
-  let staticVars = '';
+  const initVars = [];
+  const classProps = [];
+  const staticVars = [];
+
   for (const var_ of vars) {
-    if (var_.value) {
-      if (var_.static) staticVars += `${className}.${var_.name} = ${var_.value};`;
-      else initVars += `this.${var_.name} = ${var_.value};`;
-    }
+    if (var_.value === undefined) var_.value = literalInitializers[var_.type] || 'null';
+    if (var_.static) staticVars.push(`${className}.${var_.name} = ${var_.value};`);
+    else initVars.push(`this.${var_.name} = ${var_.value};`);
   }
-  if (initVars) initVars += '\n\n';
+  const initVarsStr = initVars.join('') + (initVars.length ? '\n\n' : '');
 
-  if (con || initVars) join.push(`constructor(${con ? con.parameters : ''}) {${initVars}${con ? con.block : ''}}`);
-    
-  join.push(methods.map(({ name, parameters, block }) => (
-    `${name}(${parameters}) {${block}}`
-  )).join(''));
+  if (con || initVars) classProps.push(`constructor(${con ? con.parameters : ''}) {${initVarsStr}${con ? con.block : ''}}`);
+  
+  for (const meth of methods) {
+    if (meth.static) staticVars.push(`${className}.${meth.name} = (${meth.parameters}) => {${meth.block}};`);
+    else classProps.push(`${meth.name}(${meth.parameters}) {${meth.block}}`);
+  }
 
-  return `class ${className} {${join.join('')}}${staticVars}`;
+  return `class ${className} {${classProps.join('')}}${staticVars.join('')}`;
 };
 
 const globalsToJs = ({ vars, methods, classes }) => {
@@ -236,7 +275,7 @@ const globalsToJs = ({ vars, methods, classes }) => {
 };
 
 const convertLiteralMethodsToCasts = (str) => {
-  return str.replace(/(int|float)\s*\(/g, '($1)(');
+  return str.replace(/(int|float|char|long|double)\s*\(/g, '($1)(');
 };
 
 /**
@@ -261,10 +300,8 @@ const javaToJs = (javaString, options = {}, progress) => {
   }
 
   if (progress) progress(0, 'Parsing Java');
-
-  javaString = convertLiteralMethodsToCasts(javaString);
   
-  if (options.p5) javaString = `class TempMain__ {\n${javaString}\n}`;
+  if (options.p5) javaString = `class JavaJsTemp__ {${convertLiteralMethodsToCasts(javaString)}}`;
 
   const javaAST = javaParser.parse(javaString);
 

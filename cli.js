@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const readline = require('readline');
 const program = require('commander');
 const javaToJs = require('./index');
 
@@ -34,14 +35,9 @@ const outputString = javaToJs(inputString, {
   globalVars: program.globals,
   globalScope: program.scope,
 }, (progress, message) => {
-  if (progress > 0) {
-    process.stdout.clearLine();
-    process.stdout.cursorTo(0);
-  }
   process.stdout.write(`${(progress * 100).toFixed(0)}%: ${message}`);
+  readline.cursorTo(process.stdout, 0);
 });
-process.stdout.clearLine();
-process.stdout.cursorTo(0);
   
 fs.writeFileSync(outputFile, outputString, 'utf8');
 

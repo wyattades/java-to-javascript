@@ -3,7 +3,7 @@ class MyClass {
     this.x = 42;
 
     const result = MyClass.y + secret + this.x;
-    if (result !== undefined) {
+    if (result !== null) {
       purpose();
     }
   }

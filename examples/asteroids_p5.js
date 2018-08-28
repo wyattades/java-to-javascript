@@ -1,17 +1,17 @@
-let p;
-let bg1;
-let bullets;
-let asteroids;
-let powerups;
-let output;
-let press;
-let game;
-let dead;
-let spawn;
-let timeB;
-let timeA;
-let score;
-let highscore;
+let p = null;
+let bg1 = null;
+let bullets = null;
+let asteroids = null;
+let powerups = null;
+let output = null;
+let press = false;
+let game = false;
+let dead = false;
+let spawn = false;
+let timeB = 0;
+let timeA = 0;
+let score = 0;
+let highscore = 0;
 
 const setupGame = () => {
   p = new Player(p5.width / 2, p5.height / 2, 0, 0, 6, 0.08, 0.5, 0.6, 40, 12, p5.color(255, 255, 255));
@@ -201,7 +201,7 @@ p5.keyReleased = () => {
     p.right = false;
   }
   if (p5.key === ' ') {
-    if ((game === dead === false) || (game === dead === true)) {
+    if ((game === false && dead === false) || (game === false && dead === true)) {
       setupGame();
     }
   }
@@ -215,6 +215,13 @@ const exit = () => {
 
 class Asteroid {
   constructor(Tx, Ty, Txs, Tys, Td, Tc) {
+    this.x = 0;
+    this.y = 0;
+    this.xs = 0;
+    this.ys = 0;
+    this.c = null;
+    this.d = 0;
+
     this.x = Tx;
     this.y = Ty;
     this.xs = Txs;
@@ -266,6 +273,17 @@ class Asteroid {
 
 class Badguy {
   constructor(Tx, Ty, Txs, Tys, Td, Tc, Tbounce, Tmaxs) {
+    this.x = 0;
+    this.y = 0;
+    this.xs = 0;
+    this.ys = 0;
+    this.bounce = 0;
+    this.maxs = 0;
+    this.d = 0;
+    this.c = null;
+    this.destroyed = false;
+    this.addedPu = false;
+
     this.x = Tx;
     this.y = Ty;
     this.xs = Txs;
@@ -345,6 +363,13 @@ class Badguy {
 
 class Bullet {
   constructor(Tx, Ty, Txs, Tys, Td, Tc) {
+    this.x = 0;
+    this.y = 0;
+    this.xs = 0;
+    this.ys = 0;
+    this.d = 0;
+    this.c = null;
+
     this.x = Tx;
     this.y = Ty;
     this.xs = Txs * p5.cos(p.angle + p5.PI / 2);
@@ -371,6 +396,24 @@ class Bullet {
 
 class Player {
   constructor(Tx, Ty, Txs, Tys, Tmaxs, Tslow, Tfast, Tbounce, Td, Tcd, Tc) {
+    this.up = false;
+    this.down = false;
+    this.left = false;
+    this.right = false;
+    this.faster = false;
+    this.x = 0;
+    this.y = 0;
+    this.xs = 0;
+    this.ys = 0;
+    this.maxs = 0;
+    this.slow = 0;
+    this.fast = 0;
+    this.bounce = 0;
+    this.angle = 0;
+    this.d = 0;
+    this.cd = 0;
+    this.c = null;
+
     this.x = Tx;
     this.y = Ty;
     this.xs = Txs;
@@ -473,9 +516,9 @@ class Player {
     }
   }
   move() {
-    keyMove();
-    bounceOffBoundary();
-    maxSpeed();
+    this.keyMove();
+    this.bounceOffBoundary();
+    this.maxSpeed();
     if (this.faster === false) {
       if (this.xs < 0) {
         this.xs += this.slow;
@@ -503,7 +546,14 @@ class Player {
 
 class Powerup {
   constructor(Tx, Ty, Td, Tcf, Tpoints, Tcs) {
+    this.x = 0;
+    this.y = 0;
+    this.d = 0;
+    this.points = 0;
     this.f = 255;
+    this.cs = null;
+    this.cf = null;
+    this.puAdded = false;
 
     this.x = Tx;
     this.y = Ty;
