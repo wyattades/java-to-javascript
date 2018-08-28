@@ -1,4 +1,5 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.javaToJavascript = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
+(function (process){
 "use strict";
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
@@ -18,12 +19,28 @@ var beautify = require('js-beautify/js/lib/beautify');
 
 var p5_options = require('./p5_options');
 
+var DEV = process.env.NODE_ENV === 'development';
 var opts = {
   beautifyOptions: {
     indent_size: 2
   },
   globalVars: {},
   globalScope: null
+};
+var literalInitializers = {
+  int: '0',
+  float: '0',
+  double: '0',
+  short: '0',
+  long: '0',
+  char: '\'\'',
+  boolean: 'false'
+};
+
+var unhandledNode = function unhandledNode(node) {
+  var msg = "Unhandled node: ".concat(node.node);
+  if (DEV) throw msg;else console.error(msg);
+  return '';
 };
 
 var joinStatements = function joinStatements(stats) {
@@ -33,9 +50,10 @@ var joinStatements = function joinStatements(stats) {
 var varToString = function varToString(_ref, noLet) {
   var name = _ref.name,
       value = _ref.value,
+      type = _ref.type,
       final = _ref.final;
-  var assignment = value ? "".concat(name, " = ").concat(value) : "".concat(name);
-  return "".concat(noLet !== true ? final ? 'const ' : 'let ' : '').concat(assignment);
+  if (value === undefined) value = literalInitializers[type] || 'null';
+  return "".concat(noLet !== true ? final ? 'const ' : 'let ' : '').concat(name, " = ").concat(value);
 };
 
 var parseClass = function parseClass(class_, isGlobal) {
@@ -60,6 +78,11 @@ var parseClass = function parseClass(class_, isGlobal) {
     return name;
   };
 
+  var parseType = function parseType(type) {
+    if (type.node === 'ArrayType') return 'Array'; // Doesn't matter what we return, we don't use it
+    else if (type.node === 'SimpleType') return type.name.identifier;else if (type.node === 'PrimitiveType') return type.primitiveTypeCode;else if (type.node === 'ParameterizedType') return parseType(type.type);else return unhandledNode(type);
+  };
+
   var parseExpr = function parseExpr(expr, isTop) {
     if (!expr) return undefined;
 
@@ -68,8 +91,7 @@ var parseClass = function parseClass(class_, isGlobal) {
         return 'this';
 
       case 'NullLiteral':
-        return 'undefined';
-      // Unassigned objects (null) -> unassigned variables (undefined)
+        return 'null';
 
       case 'BooleanLiteral':
         return expr.booleanValue;
@@ -86,6 +108,9 @@ var parseClass = function parseClass(class_, isGlobal) {
       case 'CastExpression':
         // TODO: use expr.type to convert?
         return parseExpr(expr.expression);
+
+      case 'ConditionalExpression':
+        return "".concat(parseExpr(expr.expression), " ? ").concat(parseExpr(expr.thenExpression), " : ").concat(parseExpr(expr.elseExpression));
 
       case 'SimpleName':
         return assignParent(expr.identifier);
@@ -113,7 +138,7 @@ var parseClass = function parseClass(class_, isGlobal) {
         return "super.".concat(expr.name.identifier, "(").concat(expr.arguments.map(parseExpr), ")");
 
       case 'ClassInstanceCreation':
-        return "new ".concat(expr.type.name ? expr.type.name.identifier : expr.type.type.name.identifier, "(").concat(expr.arguments.map(parseExpr), ")");
+        return "new ".concat(parseType(expr.type), "(").concat(expr.arguments.map(parseExpr), ")");
 
       case 'PostfixExpression':
         return "".concat(parseExpr(expr.operand)).concat(expr.operator);
@@ -138,21 +163,20 @@ var parseClass = function parseClass(class_, isGlobal) {
         return "(".concat(parseExpr(expr.expression), ")");
 
       default:
-        throw "weird expr: ".concat(expr.node);
+        return unhandledNode(expr);
     }
   };
 
-  var parseFieldVars = function parseFieldVars(field) {
-    var vars = [];
-    var modifiers = {};
+  var parseModifiers = function parseModifiers(modifiers) {
+    var mods = {};
     var _iteratorNormalCompletion = true;
     var _didIteratorError = false;
     var _iteratorError = undefined;
 
     try {
-      for (var _iterator = field.modifiers[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-        var modifier = _step.value;
-        if (modifier.keyword === 'static') modifiers.static = true;else if (modifier.keyword === 'final') modifiers.final = true; // else throw `weird modifier: ${modifier}`;
+      for (var _iterator = modifiers[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+        var mod = _step.value;
+        if (mod.keyword === 'static') mods.static = true;else if (mod.keyword === 'final') mods.final = true;
       }
     } catch (err) {
       _didIteratorError = true;
@@ -169,6 +193,13 @@ var parseClass = function parseClass(class_, isGlobal) {
       }
     }
 
+    return mods;
+  };
+
+  var parseFieldVars = function parseFieldVars(field) {
+    var vars = [];
+    var data = parseModifiers(field.modifiers);
+    data.type = parseType(field.type);
     var _iteratorNormalCompletion2 = true;
     var _didIteratorError2 = false;
     var _iteratorError2 = undefined;
@@ -181,8 +212,8 @@ var parseClass = function parseClass(class_, isGlobal) {
           vars.push(Object.assign({
             name: frag.name.identifier,
             value: parseExpr(frag.initializer, true)
-          }, modifiers));
-        } else throw "weird frag: ".concat(frag.node);
+          }, data));
+        } else unhandledNode(frag);
       }
     } catch (err) {
       _didIteratorError2 = true;
@@ -262,7 +293,8 @@ var parseClass = function parseClass(class_, isGlobal) {
         return tryBlock;
 
       default:
-        throw "weird statement: ".concat(stat.node);
+        return unhandledNode(stat);
+        ;
     }
   };
 
@@ -303,11 +335,10 @@ var parseClass = function parseClass(class_, isGlobal) {
   };
 
   var parseMethod = function parseMethod(method) {
-    var data = {
+    var data = Object.assign({
       name: method.name.identifier,
-      parameters: [],
-      block: null
-    };
+      parameters: []
+    }, parseModifiers(method.modifiers));
     var _iteratorNormalCompletion5 = true;
     var _didIteratorError5 = false;
     var _iteratorError5 = undefined;
@@ -315,7 +346,7 @@ var parseClass = function parseClass(class_, isGlobal) {
     try {
       for (var _iterator5 = method.parameters[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
         var param = _step5.value;
-        if (param.node === 'SingleVariableDeclaration') data.parameters.push(param.name.identifier);else throw "weird param: ".concat(param.node);
+        if (param.node === 'SingleVariableDeclaration') data.parameters.push(param.name.identifier);else unhandledNode(block);
       }
     } catch (err) {
       _didIteratorError5 = true;
@@ -348,6 +379,8 @@ var parseClass = function parseClass(class_, isGlobal) {
         var _classData$vars;
 
         (_classData$vars = classData.vars).push.apply(_classData$vars, _toConsumableArray(parseFieldVars(dec)));
+      } else if (dec.node === 'MethodDeclaration' && !dec.constructor && isGlobal !== true) {
+        classVarsMap[dec.name.identifier] = true;
       }
     }
   } catch (err) {
@@ -400,7 +433,7 @@ var parseClass = function parseClass(class_, isGlobal) {
       var _dec = _step8.value;
       if (_dec.node === 'TypeDeclaration') classData.classes.push(parseClass(_dec));else if (_dec.node === 'MethodDeclaration') {
         if (_dec.constructor) classData.constructor = parseMethod(_dec);else classData.methods.push(parseMethod(_dec));
-      } else if (_dec.node !== 'FieldDeclaration') throw "weird body: ".concat(_dec.node);
+      } else if (_dec.node !== 'FieldDeclaration') unhandledNode(_dec);
     }
   } catch (err) {
     _didIteratorError8 = true;
@@ -425,9 +458,9 @@ var classToJs = function classToJs(_ref2) {
       vars = _ref2.vars,
       con = _ref2.constructor,
       methods = _ref2.methods;
-  var join = [];
-  var initVars = '';
-  var staticVars = '';
+  var initVars = [];
+  var classProps = [];
+  var staticVars = [];
   var _iteratorNormalCompletion9 = true;
   var _didIteratorError9 = false;
   var _iteratorError9 = undefined;
@@ -435,10 +468,8 @@ var classToJs = function classToJs(_ref2) {
   try {
     for (var _iterator9 = vars[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
       var var_ = _step9.value;
-
-      if (var_.value) {
-        if (var_.static) staticVars += "".concat(className, ".").concat(var_.name, " = ").concat(var_.value, ";");else initVars += "this.".concat(var_.name, " = ").concat(var_.value, ";");
-      }
+      if (var_.value === undefined) var_.value = literalInitializers[var_.type] || 'null';
+      if (var_.static) staticVars.push("".concat(className, ".").concat(var_.name, " = ").concat(var_.value, ";"));else initVars.push("this.".concat(var_.name, " = ").concat(var_.value, ";"));
     }
   } catch (err) {
     _didIteratorError9 = true;
@@ -455,27 +486,45 @@ var classToJs = function classToJs(_ref2) {
     }
   }
 
-  if (initVars) initVars += '\n\n';
-  if (con || initVars) join.push("constructor(".concat(con ? con.parameters : '', ") {").concat(initVars).concat(con ? con.block : '', "}"));
-  join.push(methods.map(function (_ref3) {
-    var name = _ref3.name,
-        parameters = _ref3.parameters,
-        block = _ref3.block;
-    return "".concat(name, "(").concat(parameters, ") {").concat(block, "}");
-  }).join(''));
-  return "class ".concat(className, " {").concat(join.join(''), "}").concat(staticVars);
+  var initVarsStr = initVars.join('') + (initVars.length ? '\n\n' : '');
+  if (con || initVars) classProps.push("constructor(".concat(con ? con.parameters : '', ") {").concat(initVarsStr).concat(con ? con.block : '', "}"));
+  var _iteratorNormalCompletion10 = true;
+  var _didIteratorError10 = false;
+  var _iteratorError10 = undefined;
+
+  try {
+    for (var _iterator10 = methods[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+      var meth = _step10.value;
+      if (meth.static) staticVars.push("".concat(className, ".").concat(meth.name, " = (").concat(meth.parameters, ") => {").concat(meth.block, "};"));else classProps.push("".concat(meth.name, "(").concat(meth.parameters, ") {").concat(meth.block, "}"));
+    }
+  } catch (err) {
+    _didIteratorError10 = true;
+    _iteratorError10 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion10 && _iterator10.return != null) {
+        _iterator10.return();
+      }
+    } finally {
+      if (_didIteratorError10) {
+        throw _iteratorError10;
+      }
+    }
+  }
+
+  return "class ".concat(className, " {").concat(classProps.join(''), "}").concat(staticVars.join(''));
 };
 
-var globalsToJs = function globalsToJs(_ref4) {
-  var vars = _ref4.vars,
-      methods = _ref4.methods,
-      classes = _ref4.classes;
+var globalsToJs = function globalsToJs(_ref3) {
+  var vars = _ref3.vars,
+      methods = _ref3.methods,
+      classes = _ref3.classes;
   var join = [];
   join.push(joinStatements(vars.map(varToString)));
-  join.push(methods.map(function (_ref5) {
-    var name = _ref5.name,
-        parameters = _ref5.parameters,
-        block = _ref5.block;
+  join.push(methods.map(function (_ref4) {
+    var name = _ref4.name,
+        parameters = _ref4.parameters,
+        block = _ref4.block;
     return "".concat(opts.globalScope && name in opts.globalVars ? "".concat(opts.globalScope, ".") : 'const ').concat(name, " = (").concat(parameters, ") => {").concat(block, "};");
   }).join('\n\n'));
   join.push(classes.map(classToJs).join('\n\n'));
@@ -483,7 +532,7 @@ var globalsToJs = function globalsToJs(_ref4) {
 };
 
 var convertLiteralMethodsToCasts = function convertLiteralMethodsToCasts(str) {
-  return str.replace(/(int|float)\s*\(/g, '($1)(');
+  return str.replace(/(int|float|char|long|double)\s*\(/g, '($1)(');
 };
 /**
  * Convert Java string to JavaScript string
@@ -511,8 +560,7 @@ var javaToJs = function javaToJs(javaString) {
   }
 
   if (progress) progress(0, 'Parsing Java');
-  javaString = convertLiteralMethodsToCasts(javaString);
-  if (options.p5) javaString = "class TempMain__ {\n".concat(javaString, "\n}");
+  if (options.p5) javaString = "class JavaJsTemp__ {".concat(convertLiteralMethodsToCasts(javaString), "}");
   var javaAST = javaParser.parse(javaString);
   if (progress) progress(0.5, 'Converting to JavaScript');
   var jsString;
@@ -533,7 +581,8 @@ var javaToJs = function javaToJs(javaString) {
 
 module.exports = javaToJs;
 
-},{"./p5_options":4,"java-parser":2,"js-beautify/js/lib/beautify":3}],2:[function(require,module,exports){
+}).call(this,require('_process'))
+},{"./p5_options":5,"_process":4,"java-parser":2,"js-beautify/js/lib/beautify":3}],2:[function(require,module,exports){
 (function (global){
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.JavaParser = f()}})(function(){var define,module,exports;module={exports:(exports={})};
 /*
@@ -17357,6 +17406,192 @@ if (typeof define === "function" && define.amd) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],4:[function(require,module,exports){
+// shim for using process in browser
+var process = module.exports = {};
+
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+function defaultSetTimout() {
+    throw new Error('setTimeout has not been defined');
+}
+function defaultClearTimeout () {
+    throw new Error('clearTimeout has not been defined');
+}
+(function () {
+    try {
+        if (typeof setTimeout === 'function') {
+            cachedSetTimeout = setTimeout;
+        } else {
+            cachedSetTimeout = defaultSetTimout;
+        }
+    } catch (e) {
+        cachedSetTimeout = defaultSetTimout;
+    }
+    try {
+        if (typeof clearTimeout === 'function') {
+            cachedClearTimeout = clearTimeout;
+        } else {
+            cachedClearTimeout = defaultClearTimeout;
+        }
+    } catch (e) {
+        cachedClearTimeout = defaultClearTimeout;
+    }
+} ())
+function runTimeout(fun) {
+    if (cachedSetTimeout === setTimeout) {
+        //normal enviroments in sane situations
+        return setTimeout(fun, 0);
+    }
+    // if setTimeout wasn't available but was latter defined
+    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+        cachedSetTimeout = setTimeout;
+        return setTimeout(fun, 0);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedSetTimeout(fun, 0);
+    } catch(e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+            return cachedSetTimeout.call(null, fun, 0);
+        } catch(e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+            return cachedSetTimeout.call(this, fun, 0);
+        }
+    }
+
+
+}
+function runClearTimeout(marker) {
+    if (cachedClearTimeout === clearTimeout) {
+        //normal enviroments in sane situations
+        return clearTimeout(marker);
+    }
+    // if clearTimeout wasn't available but was latter defined
+    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+        cachedClearTimeout = clearTimeout;
+        return clearTimeout(marker);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedClearTimeout(marker);
+    } catch (e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+            return cachedClearTimeout.call(null, marker);
+        } catch (e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+            return cachedClearTimeout.call(this, marker);
+        }
+    }
+
+
+
+}
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
+}
+
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    var timeout = runTimeout(cleanUpNextTick);
+    draining = true;
+
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
+        }
+        queueIndex = -1;
+        len = queue.length;
+    }
+    currentQueue = null;
+    draining = false;
+    runClearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        runTimeout(drainQueue);
+    }
+};
+
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+
+process.listeners = function (name) { return [] }
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
+},{}],5:[function(require,module,exports){
 "use strict";
 
 var _globalVars;
