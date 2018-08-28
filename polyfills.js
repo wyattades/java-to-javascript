@@ -1,5 +1,4 @@
 
-// List
 class List extends Array {
   constructor(a) {
     if (Array.isArray(a)) super(...a);
@@ -15,7 +14,7 @@ class List extends Array {
   }
   contains(val) { return this.indexOf(val) !== -1; }
   set(i, val) { this[i] = val; }
-  get(i) { return this[i] || null; }
+  get(i) { return this[i] === undefined ? null : this[i]; }
   size() { return this.length; }
   remove(val) {
     if (typeof val === 'number') this.splice(val, 1);
@@ -27,8 +26,27 @@ class List extends Array {
     }
   }
   clear() { this.length = 0; }
-  clone() { return new ArrayList(this.slice()); }
+  clone() { return new List(this.slice()); }
 }
 
-// ArrayList
 class ArrayList extends List {}
+
+class Map {
+  constructor(a) {
+    this.obj = {};
+    if (a instanceof Map) Object.assign(this.obj, a);
+  }
+  containsKey(key) { return key in this.obj; }
+  containsValue(val) { return Object.values(this.obj).indexOf(val) !== -1; }
+  put(key, val) { this.obj[key] = val; }
+  putAll(obj) { Object.assign(this.obj, obj) }
+  get(key) { return this.obj[key] === undefined ? null : this.obj[key]; }
+  size() { return Object.keys(this.obj).length; }
+  remove(key) { delete this.obj[key]; }
+  clear() { this.obj = {}; }
+  clone() { return new Map(this.obj); }
+  values() { return Object.values(this.obj); }
+  keySet() { return Object.keys(this.obj); }
+}
+
+class HashMap extends Map {}
