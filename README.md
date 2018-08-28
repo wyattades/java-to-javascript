@@ -1,7 +1,7 @@
 # Java to JavaScript
 Convert Java Classes to ES6 Classes.
 
-Translates: classes, methods, variables, literal casts, and more!
+Translates: classes, methods, variables, statics, finals, and more!
 
 (Originally created for converting [Processing](https://processing.org/) to [p5.js](https://p5js.org/))
 
@@ -30,7 +30,7 @@ class MyClass {
     this.x = 42;
 
     const result = MyClass.y + secret + this.x;
-    if (result !== undefined) {
+    if (result !== null) {
       purpose();
     }
   }
@@ -60,10 +60,10 @@ var jsString = javaToJavascript( /* params */ );
 | [options.p5] | <code>boolean</code> | Sets `globalScope` to `'p5'`, and add [p5 variable mappings](./p5_globals.js) to `globalVars`. |
 | [options.globalVars] | <code>object</code> | Object keys are added to the `globalScope` object.  If the value is a string, the variable is renamed to that string |
 | [options.globalScope] | <code>string</code> | If specified, variables in `globalVars` are appended to `globalScope` object |
-| [progress] | <code>function</code> | Callback on progress of conversion. Args are progress number (0 to 1), and a message string |
+| [progress] | <code>function</code> | Callback on progress of conversion. Args are progress value (0 to 1), and a message string |
 
 ## Command Line API
-```bash
+```
 Usage: java-to-javascript [options] <input_file>
 
 Convert a Java file to an ES6 JavaScript file
@@ -88,7 +88,10 @@ Options:
 ## Polyfills
 I've included some Java Class (partial) polyfills in [polyfills.js](./polyfills.js) that help in the conversion of Java to JS.
 
-__Included Polyfills__: `List`, `ArrayList`
+__Included Polyfills__: `List`, `ArrayList`, `Map`, `HashMap`
+
+## CDN
+Unpkg: https://unpkg.com/java-to-javascript@latest/build/java-to-javascript.min.js
 
 ## BUGS!
 
@@ -118,15 +121,17 @@ __Included Polyfills__: `List`, `ArrayList`
 
 - Unnecessary or deeply nested parentheses can cause very long or *infinite* process hanging.
   
-  __Example__ -- will infinitely hang:
+  __Example__
   ```java
-  (width/2)+(cos(angle)*((sqrt(sq(height)+sq(width))/2)+random(50,150)));
+  /* I don't know the exact cause, but here's what I have found: */
+  ((testFunc())); // Normal
+  (((testFunc()))); // Long parse time
+  ((((testFunc())))); // Infinitely hangs
   ```
-- `static` has no effect on class methods
 - Nested classes aren't converted
-
-## CDN
-Unpkg: https://unpkg.com/java-to-javascript@latest/build/java-to-javascript.min.js
+- Literal casts are ignored (How should they be handled? e.g. `(int)x` -> `x|0`)
 
 ## DISCLAIMER
-Not all Java features are supported, and some are too difficult to translate to JS, so make sure to check the JS code afterwards.
+Not all Java features are supported, and some are too difficult to translate to JS, so make sure to doublecheck the resulting code.
+
+Please report bugs to [Github Issues](https://github.com/wyattades/java-to-javascript/issues)!
