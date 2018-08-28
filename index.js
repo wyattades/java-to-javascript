@@ -3,7 +3,6 @@ const $input = document.getElementById('input');
 const $output = document.getElementById('output');
 const $progress = document.getElementById('progress');
 let worker;
-window.Worker = null;
 
 const editorOptions = {
   tabSize: 2,
@@ -17,7 +16,7 @@ const inEditor = CodeMirror.fromTextArea($input, Object.assign({
 inEditor.setValue(window.localStorage.getItem('java2js-editor') || '')
 inEditor.setOption('extraKeys', {
   'Ctrl-/': () => inEditor.execCommand('toggleComment'),
-})
+});
 
 const outEditor = CodeMirror.fromTextArea($output, Object.assign({
   mode: 'javascript',
@@ -42,6 +41,7 @@ try {
 
 
 const handleError = (e) => {
+  outEditor.setValue('');
   $progress.classList.add('error');
   $error.classList.add('active');
   if (e.name === 'SyntaxError') $error.innerText = `SyntaxError around line ${e.location.start.line}: ${e.message}`;
@@ -55,7 +55,6 @@ const setResult = (str) => {
   if (!str) {
     $progress.classList.remove('easing', 'start');
     $progress.style.width = 0;
-    // setTimeout(() => $progress.classList.add('easing'));
   }
 };
 
@@ -66,21 +65,23 @@ const convert = () => {
   $progress.classList.remove('error', 'easing', 'start');
   $progress.style.width = 0;
 
-  const javaString = inEditor.getValue().trim();
-  if (javaString) {
-    if (worker) {
-      converting = true;
-      worker.postMessage([ 'convert', javaString, options ]);
-    } else {
-      try {
-        setResult(window.javaToJavascript(javaString, options, updateProgress));
-      } catch(e) {
-        handleError(e);
+  setTimeout(() => {
+    const javaString = inEditor.getValue().trim();
+    if (javaString) {
+      if (worker) {
+        converting = true;
+        worker.postMessage([ 'convert', javaString, options ]);
+      } else {
+        try {
+          setResult(window.javaToJavascript(javaString, options, updateProgress));
+        } catch(e) {
+          handleError(e);
+        }
       }
+    } else {
+      setResult('');
     }
-  } else {
-    setResult('');
-  }
+  }, 100);
 };
 
 const setWorker = () => {
@@ -104,7 +105,7 @@ if (window.Worker) {
   // Synchronously load java-to-javascript
   const s = document.createElement('script');
   s.onload = () => convert();
-  s.src = 'https://unpkg.com/java-to-javascript@latest/build/java-to-javascript.min.js';
+  s.src = 'https://unpkg.com/java-to-javascript/build/java-to-javascript.min.js';
   s.type = 'text/javascript';
   document.head.appendChild(s);
 }
@@ -118,8 +119,10 @@ const updateOptions = (e) => {
   else if (key === 'globalVars') {
     try {
       const _val = JSON.parse(el.value);
-      if (_val && typeof _val === 'object') val = _val;
-    } catch(_) {}
+      val = (_val && typeof _val === 'object') ? _val : null;
+    } catch(_) {
+      val = null;
+    }
   }
   options[key] = val;
   window.localStorage.setItem('java2js-options', JSON.stringify(options));
@@ -129,7 +132,7 @@ document.querySelectorAll('#menu [name]').forEach((el) => {
   const key = el.getAttribute('name');
   if (options[key]) {
     if (key === 'p5') el.checked = !!options[key];
-    else if (key === 'globalScope') el.value = options[key]
+    else if (key === 'globalScope') el.value = options[key];
     else if (key === 'globalVars') el.value = JSON.stringify(options[key]);
   }
 
@@ -145,5 +148,5 @@ inEditor.on('change', () => {
       setWorker();
     }
     convert();
-  }, 1000);
+  }, 900);
 });

@@ -1,4 +1,4 @@
-importScripts('https://unpkg.com/java-to-javascript@latest/build/java-to-javascript.min.js');
+importScripts('https://unpkg.com/java-to-javascript/build/java-to-javascript.min.js');
 
 self.onmessage = ({ data: [ cmd, data, options ] }) => {
   if (cmd === 'convert') {
