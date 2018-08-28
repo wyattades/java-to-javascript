@@ -9,13 +9,14 @@ const p5_options = require('./p5_options');
 const DEV = process.env.NODE_ENV === 'development';
 
 
-const opts = {
+const DEFAULT_OPTIONS = {
   beautifyOptions: {
     indent_size: 2,
   },
   globalVars: {},
   globalScope: null,
 };
+const opts = {};
 
 
 const literalInitializers = {
@@ -292,11 +293,13 @@ const convertLiteralMethodsToCasts = (str) => {
 const javaToJs = (javaString, options = {}, progress) => {
   if (typeof javaString !== 'string') throw 'java-to-javascript: First argument must be a string';
 
+  Object.assign(opts, DEFAULT_OPTIONS);
+
   if (options.globalVars) opts.globalVars = options.globalVars;
   if (options.globalScope) opts.globalScope = options.globalScope;
   if (options.p5) {
-    opts.globalVars = Object.assign(p5_options.globalVars, opts.globalVars);
-    if (!options.globalScope) opts.globalScope = 'p5';
+    Object.assign(opts.globalVars, p5_options.globalVars, opts.globalVars);
+    if (!opts.globalScope) opts.globalScope = 'p5';
   }
 
   if (progress) progress(0, 'Parsing Java');
