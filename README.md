@@ -39,6 +39,16 @@ MyClass.y = 'Life';
 ```
 [More Examples...](./examples)
 
+## Install
+__NPM__
+```bash
+$ npm install java-to-javascript
+```
+__CDN__
+```html
+<script src="https://unpkg.com/java-to-javascript/build/java-to-javascript.min.js"></script>
+```
+
 ## Module API <small>(For Node and the browser)</small>
 
 ### javaToJavascript(javaString, options?, progress?)
@@ -89,9 +99,6 @@ Options:
 I've included some Java Class (partial) polyfills in [polyfills.js](./polyfills.js) that help in the conversion of Java to JS.
 
 __Included Polyfills__: `List`, `ArrayList`, `Map`, `HashMap`
-
-## CDN
-Unpkg: https://unpkg.com/java-to-javascript@latest/build/java-to-javascript.min.js
 
 ## BUGS!
 

@@ -173,34 +173,34 @@ p5.mouseReleased = () => {
 };
 
 p5.keyPressed = () => {
-  if (p5.keyCode === 'W') {
+  if (p5.keyCode === 87) {
     p.up = true;
   }
-  if (p5.keyCode === 'A') {
+  if (p5.keyCode === 65) {
     p.left = true;
   }
-  if (p5.keyCode === 'S') {
+  if (p5.keyCode === 83) {
     p.down = true;
   }
-  if (p5.keyCode === 'D') {
+  if (p5.keyCode === 68) {
     p.right = true;
   }
 };
 
 p5.keyReleased = () => {
-  if (p5.keyCode === 'W') {
+  if (p5.keyCode === 87) {
     p.up = false;
   }
-  if (p5.keyCode === 'A') {
+  if (p5.keyCode === 65) {
     p.left = false;
   }
-  if (p5.keyCode === 'S') {
+  if (p5.keyCode === 83) {
     p.down = false;
   }
-  if (p5.keyCode === 'D') {
+  if (p5.keyCode === 68) {
     p.right = false;
   }
-  if (p5.key === ' ') {
+  if (p5.key === 32) {
     if ((game === false && dead === false) || (game === false && dead === true)) {
       setupGame();
     }

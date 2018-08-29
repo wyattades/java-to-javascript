@@ -29,8 +29,8 @@ const literalInitializers = {
   boolean: 'false',
 };
 
-const unhandledNode = (node) => {
-  const msg = `Unhandled node: ${node.node}`;
+const unhandledNode = (node, more = '') => {
+  const msg = `Unhandled node: ${node.node}. ${more}`;
   if (DEV) throw msg;
   else console.error(msg);
   return '';
@@ -86,7 +86,11 @@ const parseClass = (class_, isGlobal) => {
       case 'StringLiteral':
         return expr.escapedValue.replace(/'/g, '\\\'').replace(/"/g, '\'');
       case 'CharacterLiteral':
-        return expr.escapedValue;
+        const char = expr.escapedValue.slice(1, -1);
+        if (char.length === 1) return char.charCodeAt(0).toString();
+        else if (char.startsWith('\\u')) return parseInt(char.substring(2), 16).toString();
+        else return unhandledNode(expr, 'Weird char: ' + char);
+        // return expr.escapedValue.charCodeAt(1).toString(); // equivalent to: `'z'.charCodeAt(0)`
       case 'CastExpression':
         // TODO: use expr.type to convert?
         return parseExpr(expr.expression);
@@ -102,7 +106,7 @@ const parseClass = (class_, isGlobal) => {
         return `${parseExpr(expr.leftHandSide)} ${expr.operator} ${parseExpr(expr.rightHandSide)}`;
       case 'InfixExpression':
         let op = expr.operator;
-        if (op === '!=' || op === '==') op += '=';
+        if (op === '!=' || op === '==') op += '='; // triple equals in JS
         return `${parseExpr(expr.leftOperand)} ${op} ${parseExpr(expr.rightOperand)}`;
       case 'MethodInvocation':
         const args = `(${expr.arguments.map(parseExpr)})`;
@@ -163,17 +167,19 @@ const parseClass = (class_, isGlobal) => {
       case 'VariableDeclarationStatement':
         return parseFieldVars(stat).map(varToString);
       case 'ReturnStatement':
-        return (`return ${parseExpr(stat.expression, true)}`);
+        return `return ${parseExpr(stat.expression, true)}`;
       case 'IfStatement':
         let ifBlock = `if (${parseExpr(stat.expression, true)}) {${parseBlock(stat.thenStatement)}}`;
         if (stat.elseStatement) ifBlock += ` else {${parseBlock(stat.thenStatement)}}`;
-        return (ifBlock);
+        return ifBlock;
       case 'WhileStatement':
-        return (`while (${parseExpr(stat.expression, true)}) {${parseBlock(stat.body)}}`);
+        return `while (${parseExpr(stat.expression, true)}) {${parseBlock(stat.body)}}`;
       case 'ForStatement':
-        return (`for (${stat.initializers.map((_) => parseExpr(_, true))};${parseExpr(stat.expression, true)};${stat.updaters.map((_) => parseExpr(_, true))}) {${parseBlock(stat.body)}}`);
+        return `for (${stat.initializers.map((_) => parseExpr(_, true))};${parseExpr(stat.expression, true)};${stat.updaters.map((_) => parseExpr(_, true))}) {${parseBlock(stat.body)}}`;
       case 'BreakStatement':
-        return ('break');
+        return 'break';
+      case 'ThrowStatement':
+        return `throw ${parseExpr(stat.expression)}`;
       case 'TryStatement':
         let tryBlock = `try {${parseBlock(stat.body)}}`;
         for (const clause of stat.catchClauses) tryBlock += ` catch (${clause.exception.name.identifier}) {${parseBlock(clause.body)}}`; // TODO handle exception types?

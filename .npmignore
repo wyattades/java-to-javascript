@@ -1,3 +1,4 @@
 examples/
 .vscode/
 gulpfile.js
+jsconfig.json
