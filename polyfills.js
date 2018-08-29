@@ -1,5 +1,5 @@
 
-class List extends Array {
+export class List extends Array {
   constructor(a) {
     if (Array.isArray(a)) super(...a);
     else super();
@@ -29,7 +29,7 @@ class List extends Array {
   clone() { return new List(this.slice()); }
 }
 
-class ArrayList extends List {}
+export class ArrayList extends List {}
 
 class Map {
   constructor(a) {
@@ -49,4 +49,4 @@ class Map {
   keySet() { return Object.keys(this.obj); }
 }
 
-class HashMap extends Map {}
+export class HashMap extends Map {}

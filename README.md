@@ -98,7 +98,7 @@ Options:
 ## Polyfills
 I've included some Java Class (partial) polyfills in [polyfills.js](./polyfills.js) that help in the conversion of Java to JS.
 
-__Included Polyfills__: `List`, `ArrayList`, `Map`, `HashMap`
+__Included Polyfills__: `List` (alias `ArrayList`), `Map` (alias `HashMap`)
 
 ## BUGS!
 
