@@ -39,7 +39,8 @@ var literalInitializers = {
 };
 
 var unhandledNode = function unhandledNode(node) {
-  var msg = "Unhandled node: ".concat(node.node);
+  var more = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+  var msg = "Unhandled node: ".concat(node.node, ". ").concat(more);
   if (DEV) throw msg;else console.error(msg);
   return '';
 };
@@ -104,7 +105,9 @@ var parseClass = function parseClass(class_, isGlobal) {
         return expr.escapedValue.replace(/'/g, '\\\'').replace(/"/g, '\'');
 
       case 'CharacterLiteral':
-        return expr.escapedValue;
+        var char = expr.escapedValue.slice(1, -1);
+        if (char.length === 1) return char.charCodeAt(0).toString();else if (char.startsWith("\\u")) return parseInt(char.substring(2), 16).toString();else return unhandledNode(expr, 'Weird char: ' + char);
+      // return expr.escapedValue.charCodeAt(1).toString(); // equivalent to: `'z'.charCodeAt(0)`
 
       case 'CastExpression':
         // TODO: use expr.type to convert?
@@ -127,7 +130,8 @@ var parseClass = function parseClass(class_, isGlobal) {
 
       case 'InfixExpression':
         var op = expr.operator;
-        if (op === '!=' || op === '==') op += '=';
+        if (op === '!=' || op === '==') op += '='; // triple equals in JS
+
         return "".concat(parseExpr(expr.leftOperand), " ").concat(op, " ").concat(parseExpr(expr.rightOperand));
 
       case 'MethodInvocation':
@@ -262,6 +266,9 @@ var parseClass = function parseClass(class_, isGlobal) {
 
       case 'BreakStatement':
         return 'break';
+
+      case 'ThrowStatement':
+        return "throw ".concat(parseExpr(stat.expression));
 
       case 'TryStatement':
         var tryBlock = "try {".concat(parseBlock(stat.body), "}");
