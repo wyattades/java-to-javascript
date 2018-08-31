@@ -1,6 +1,6 @@
 {
   "name": "java-to-javascript",
-  "version": "0.1.8",
+  "version": "0.1.10",
   "description": "Convert Java Classes to ES6 Classes",
   "keywords": [
     "java",
@@ -20,6 +20,7 @@
     "url": "https://github.com/wyattades/java-to-javascript"
   },
   "scripts": {
+    "prepublish": "npm run build",
     "build": "gulp build",
     "examples": "bash -c 'for file in ./examples/*.java; do node ./cli.js $file $([[ \"$file\" = *\"p5\"* ]] && echo --p5); done'"
   },
