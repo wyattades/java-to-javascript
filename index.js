@@ -7,6 +7,7 @@ let worker;
 const editorOptions = {
   tabSize: 2,
   lineNumbers: true,
+  theme: 'monokai',
 };
 
 const inEditor = CodeMirror.fromTextArea($input, Object.assign({
@@ -109,28 +110,31 @@ if (window.Worker) {
   document.head.appendChild(s);
 }
 
+const opts = {
+  p5: (el) => el.checked,
+  ugly: (el) => el.checked,
+  globalScope: (el) => el.value,
+  globalVars: (el) => {
+    try {
+      const obj = JSON.parse(el.value);
+      return (obj && typeof obj === 'object') ? obj : null;
+    } catch(_) {
+      return null;
+    }
+  }
+};
+
 const updateOptions = (e) => {
   const el = e.target;
   const key = el.getAttribute('name');
-  let val;
-  if (key === 'p5') val = el.checked;
-  else if (key === 'globalScope') val = el.value;
-  else if (key === 'globalVars') {
-    try {
-      const _val = JSON.parse(el.value);
-      val = (_val && typeof _val === 'object') ? _val : null;
-    } catch(_) {
-      val = null;
-    }
-  }
-  options[key] = val;
+  options[key] = opts[key](el);
   window.localStorage.setItem('java2js-options', JSON.stringify(options));
   convert();
 };
 document.querySelectorAll('#menu [name]').forEach((el) => {
   const key = el.getAttribute('name');
   if (options[key]) {
-    if (key === 'p5') el.checked = !!options[key];
+    if (key === 'p5' || key === 'ugly') el.checked = !!options[key];
     else if (key === 'globalScope') el.value = options[key];
     else if (key === 'globalVars') el.value = JSON.stringify(options[key]);
   }

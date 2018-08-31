@@ -3,7 +3,8 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Java to JavaScript</title>
-  <!-- <script src="https://unpkg.com/java-to-javascript@latest/build/java-to-javascript.min.js"></script> -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="https://image.flaticon.com/icons/png/128/109/109617.png"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.40.0/codemirror.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.40.0/mode/javascript/javascript.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.40.0/mode/clike/clike.min.js"></script>
@@ -14,7 +15,7 @@
 </head>
 <body>
   <header>
-    <h1>Java ⇒ JavaScript</h1>
+    <h1>Java ➡ JavaScript</h1>
     <a href="https://github.com/wyattades/java-to-javascript">Github</a>
     <a href="https://www.npmjs.com/package/java-to-javascript">NPM Package</a>
     <div id="progress"></div>
@@ -23,15 +24,19 @@
     <aside id="menu">
       <strong>OPTIONS</strong>
       <div>
-        <label><input type="checkbox" name="p5">p5.js Mode</label>
-      </div>
-      <div>
         <label>Global Scope</label>
         <input type="text" name="globalScope">
       </div>
       <div>
         <label>Global Vars (JSON)</label>
         <textarea name="globalVars"></textarea>
+      </div>
+      <div>
+        <label><input type="checkbox" name="ugly"><span>Ugly Mode</span></label>
+      </div>
+      <div>
+        <label><input type="checkbox" name="p5"><span><a href="https://processing.org/">Processing</a> to <a href="https://p5js.org">p5.js</a></span></label>
+        <small>(Allows for global variables)</small>
       </div>
     </aside>
     <div id="editors">
