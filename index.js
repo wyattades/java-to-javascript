@@ -2,22 +2,19 @@
  * @module java-to-javascript
  */
 
-const javaParser = require('java-parser');
 const beautify = require('js-beautify/js/lib/beautify');
+const JavaAST = require('./javaAST' + ''); // HACK to avoid intellisense on this file
 const p5_options = require('./p5_options');
+
 
 const DEV = process.env.NODE_ENV === 'development';
 
-
 const DEFAULT_OPTIONS = {
-  beautifyOptions: {
-    indent_size: 2,
-  },
   globalVars: {},
   globalScope: null,
+  separator: '\n\n',
 };
 const opts = {};
-
 
 const literalInitializers = {
   int: '0',
@@ -29,10 +26,11 @@ const literalInitializers = {
   boolean: 'false',
 };
 
+const SEP = '$';
+
 const unhandledNode = (node, more = '') => {
-  const msg = `Unhandled node: ${node.node}. ${more}`;
-  if (DEV) throw msg;
-  else console.error(msg);
+  if (DEV) throw node;
+  else console.error(`Unhandled node: ${node.node}. ${more}`);
   return '';
 };
 
@@ -43,10 +41,29 @@ const varToString = ({ name, value, type, final }, noLet) => {
   return `${noLet !== true ? (final ? 'const ' : 'let ') : ''}${name} = ${value}`;
 };
 
+const parseType = (type) => {
+  if (type.node === 'ArrayType') return 'Array'; // Doesn't matter what we return, we don't use it
+  else if (type.node === 'SimpleType') return type.name.identifier;
+  else if (type.node === 'PrimitiveType') return type.primitiveTypeCode;
+  else if (type.node === 'ParameterizedType') return parseType(type.type);
+  else return unhandledNode(type);
+};
+
+const parseModifiers = (modifiers) => {
+  const mods = {};
+  for (const mod of modifiers) {
+    mods[mod.keyword] = true;
+  }
+  return mods;
+};
+
 const parseClass = (class_, isGlobal) => {
+  const modifiers = parseModifiers(class_.modifiers);
+  if (modifiers.abstract || class_.interface) return { abstract: true };
+
   const classData = {
     name: class_.name.identifier,
-    constructor: null,
+    superclass: class_.superclassType && parseType(class_.superclassType),
     classes: [],
     vars: [],
     methods: [],
@@ -62,16 +79,8 @@ const parseClass = (class_, isGlobal) => {
     }
     return name;
   };
-
-  const parseType = (type) => {
-    if (type.node === 'ArrayType') return 'Array'; // Doesn't matter what we return, we don't use it
-    else if (type.node === 'SimpleType') return type.name.identifier;
-    else if (type.node === 'PrimitiveType') return type.primitiveTypeCode;
-    else if (type.node === 'ParameterizedType') return parseType(type.type);
-    else return unhandledNode(type);
-  };
   
-  const parseExpr = (expr, isTop) => {
+  const parseExpr = (expr) => {
     if (!expr) return undefined;
   
     switch (expr.node) {
@@ -82,7 +91,11 @@ const parseClass = (class_, isGlobal) => {
       case 'BooleanLiteral':
         return expr.booleanValue;
       case 'NumberLiteral':
-        return expr.token;
+        let num = expr.token;
+        num = num.replace(/_/g, '');
+        if (/^0\d+$/.test(num)) num = '0o' + num.substring(1);
+        else if (/[lfd]$/i.test(num)) num = num.slice(0, -1);
+        return num;
       case 'StringLiteral':
         return expr.escapedValue.replace(/'/g, '\\\'').replace(/"/g, '\'');
       case 'CharacterLiteral':
@@ -112,6 +125,8 @@ const parseClass = (class_, isGlobal) => {
         const args = `(${expr.arguments.map(parseExpr)})`;
         if (expr.expression) return `${parseExpr(expr.expression)}.${expr.name.identifier}${args}`;
         return `${assignParent(expr.name.identifier)}${args}`;
+      case 'InstanceofExpression':
+        return `${parseExpr(expr.leftOperand)} instanceof ${parseType(expr.rightOperand)}`;
       case 'SuperMethodInvocation':
         return `super.${expr.name.identifier}(${expr.arguments.map(parseExpr)})`;
       case 'ClassInstanceCreation':
@@ -133,15 +148,6 @@ const parseClass = (class_, isGlobal) => {
       default: return unhandledNode(expr);
     }
   };
-
-  const parseModifiers = (modifiers) => {
-    const mods = {};
-    for (const mod of modifiers) {
-      if (mod.keyword === 'static') mods.static = true;
-      else if (mod.keyword === 'final') mods.final = true;
-    }
-    return mods;
-  };
   
   const parseFieldVars = (field) => {
     const vars = [];
@@ -152,7 +158,7 @@ const parseClass = (class_, isGlobal) => {
       if (frag.node === 'VariableDeclarationFragment') {
         vars.push(Object.assign({
           name: frag.name.identifier,
-          value: parseExpr(frag.initializer, true),
+          value: parseExpr(frag.initializer),
         }, data));
       } else unhandledNode(frag);
     }
@@ -162,28 +168,55 @@ const parseClass = (class_, isGlobal) => {
 
   const parseStatement = (stat) => {
     switch (stat.node) {
+      case 'EmptyStatement':
+        return '';
       case 'ExpressionStatement':
-        return parseExpr(stat.expression, true);
+        return parseExpr(stat.expression);
       case 'VariableDeclarationStatement':
         return parseFieldVars(stat).map(varToString);
       case 'ReturnStatement':
-        return `return ${parseExpr(stat.expression, true)}`;
+        return `return ${parseExpr(stat.expression)}`;
+      case 'SuperConstructorInvocation':
+        // TODO stat.expression stat.typeArguments
+        return `super(${stat.arguments.map(parseExpr)})`;
       case 'IfStatement':
-        let ifBlock = `if (${parseExpr(stat.expression, true)}) {${parseBlock(stat.thenStatement)}}`;
-        if (stat.elseStatement) ifBlock += ` else {${parseBlock(stat.thenStatement)}}`;
+        let ifBlock = `if(${parseExpr(stat.expression)}){${parseBlock(stat.thenStatement)}}`;
+        if (stat.elseStatement) ifBlock += `else{${parseBlock(stat.elseStatement)}}`;
         return ifBlock;
       case 'WhileStatement':
-        return `while (${parseExpr(stat.expression, true)}) {${parseBlock(stat.body)}}`;
+        return `while(${parseExpr(stat.expression)}){${parseBlock(stat.body)}}`;
+      case 'DoStatement':
+        return `do{${parseBlock(stat.body)}}while(${parseExpr(stat.expression)})`
       case 'ForStatement':
-        return `for (${stat.initializers.map((_) => parseExpr(_, true))};${parseExpr(stat.expression, true)};${stat.updaters.map((_) => parseExpr(_, true))}) {${parseBlock(stat.body)}}`;
+        let initializers = stat.initializers.map(parseExpr).join(',');
+        if (stat.initializers.length && stat.initializers[0].node === 'VariableDeclarationExpression')
+          initializers = 'let ' + initializers.replace(/(let|const) /g, '');
+        return `for(${initializers};${parseExpr(stat.expression) || ''};${stat.updaters.map(parseExpr)}){${parseBlock(stat.body)}}`;
+      case 'EnhancedForStatement':
+        return `for(const ${stat.parameter.name.identifier} of ${parseExpr(stat.expression)}){${parseBlock(stat.body)}}`;
       case 'BreakStatement':
-        return 'break';
+        return `break ${stat.label ? stat.label.identifier : ''}`;
+      case 'ContinueStatement':
+        return `continue ${stat.label ? stat.label.identifier : ''}`;
+      case 'LabeledStatement':
+        return `${stat.label.identifier}:${parseStatement(stat.body)}`;
+      case 'SwitchCase':
+        return `case ${parseExpr(stat.expression)}:`;
+      case 'SwitchStatement':
+        let switchStats = '';
+        for (const _stat of stat.statements) {
+          const statStr = parseStatement(_stat);
+          switchStats += statStr + (statStr.endsWith(':') ? '' : ';');
+        }
+        return `switch(${parseExpr(stat.expression)}){${switchStats}}`;
+      case 'AssertStatement':
+        return `if (!(${parseExpr(stat.expression)})) throw ${stat.message ? parseExpr(stat.message) : '\'Assertion Failed\''}`;
       case 'ThrowStatement':
         return `throw ${parseExpr(stat.expression)}`;
       case 'TryStatement':
-        let tryBlock = `try {${parseBlock(stat.body)}}`;
-        for (const clause of stat.catchClauses) tryBlock += ` catch (${clause.exception.name.identifier}) {${parseBlock(clause.body)}}`; // TODO handle exception types?
-        if (stat.finally) tryBlock += ` finally {${parseBlock(stat.finally)}}`;
+        let tryBlock = `try{${parseBlock(stat.body)}}`;
+        for (const clause of stat.catchClauses) tryBlock += ` catch(${clause.exception.name.identifier}){${parseBlock(clause.body)}}`; // TODO handle exception types?
+        if (stat.finally) tryBlock += `finally{${parseBlock(stat.finally)}}`;
         return tryBlock;
       default: return unhandledNode(stat);;
     }
@@ -210,6 +243,12 @@ const parseClass = (class_, isGlobal) => {
       name: method.name.identifier,
       parameters: [],
     }, parseModifiers(method.modifiers));
+
+    if (method.constructor) {
+      data.constructor = true;
+      data.name = 'constructor';
+      data.static = false;
+    }
   
     for (const param of method.parameters) {
       if (param.node === 'SingleVariableDeclaration') data.parameters.push(param.name.identifier);
@@ -236,35 +275,67 @@ const parseClass = (class_, isGlobal) => {
 
   for (const dec of class_.bodyDeclarations) {
     if (dec.node === 'TypeDeclaration') classData.classes.push(parseClass(dec));
-    else if (dec.node === 'MethodDeclaration') {
-      if (dec.constructor) classData.constructor = parseMethod(dec);
-      else classData.methods.push(parseMethod(dec));
-    } else if (dec.node !== 'FieldDeclaration') unhandledNode(dec);
+    else if (dec.node === 'MethodDeclaration') classData.methods.push(parseMethod(dec));
+    else if (dec.node !== 'FieldDeclaration') unhandledNode(dec);
   }
 
   return classData;
 };
 
-const classToJs = ({ name: className, vars, constructor: con, methods }) => {
+const classToJs = ({ name: className, vars, superclass, methods, abstract }) => {
+  if (abstract) return '';
+
   const initVars = [];
   const classProps = [];
   const staticVars = [];
 
   for (const var_ of vars) {
     if (var_.value === undefined) var_.value = literalInitializers[var_.type] || 'null';
-    if (var_.static) staticVars.push(`${className}.${var_.name} = ${var_.value};`);
-    else initVars.push(`this.${var_.name} = ${var_.value};`);
+    if (var_.static) staticVars.push(`${className}.${var_.name}=${var_.value};`);
+    else initVars.push(`this.${var_.name}=${var_.value};`);
   }
-  const initVarsStr = initVars.join('') + (initVars.length ? '\n\n' : '');
 
-  if (con || initVars) classProps.push(`constructor(${con ? con.parameters : ''}) {${initVarsStr}${con ? con.block : ''}}`);
-  
+  let addedConstructor = false;
+
+  const addMethod = ({ name, parameters, block, constructor, static: static_ }, addInitVars) => {
+    if (constructor) addedConstructor = true;
+    if (static_) staticVars.push(`${className}.${name}=(${parameters})=>{${block}};`);
+    else {
+      const preblock = (constructor && addInitVars && initVars.length) ? initVars.join('') + (block ? opts.separator : '') : ''
+      classProps.push(`${name}(${parameters}){${preblock}${block}}`);
+    }
+  };
+
+  const methodMap = {};
   for (const meth of methods) {
-    if (meth.static) staticVars.push(`${className}.${meth.name} = (${meth.parameters}) => {${meth.block}};`);
-    else classProps.push(`${meth.name}(${meth.parameters}) {${meth.block}}`);
+    const safeName = meth.name + '$$';
+    if (!(safeName in methodMap)) methodMap[safeName] = {};
+    methodMap[safeName][meth.parameters.length] = meth;
+  }
+  for (const safeName in methodMap) {
+    const name = safeName.slice(0, -2);
+    const paramMap = methodMap[safeName];
+    const paramCounts = Object.keys(paramMap);
+    
+    const first = paramMap[paramCounts[0]];
+    if (paramCounts.length === 1) {
+      addMethod(first, true);
+    } else {
+      let cases = '';
+      for (const paramCount of paramCounts) {
+        const meth = paramMap[paramCount];
+        meth.name = `${name}${SEP}${paramCount}`;
+        cases += `case ${paramCount}:return ${meth.static ? className : 'this'}.${meth.name}(...args$);`;
+        addMethod(meth);
+      }
+      if (first.static) staticVars.push(`${className}.${name}=(...args${SEP})=>{switch(args${SEP}.length){${cases}}};`);
+      else classProps.push(`${name}(...args${SEP}){switch(args${SEP}.length){${cases}}}`)
+    }
   }
 
-  return `class ${className} {${classProps.join('')}}${staticVars.join('')}`;
+  if (!addedConstructor && initVars.length) classProps.unshift(`constructor(){${initVars.join('') + opts.separator}}`);
+
+  return `class ${className}${superclass ? (' extends ' + superclass) : ''}{${classProps.join('')}}${staticVars.join('')}`;
 };
 
 const globalsToJs = ({ vars, methods, classes }) => {
@@ -274,11 +345,11 @@ const globalsToJs = ({ vars, methods, classes }) => {
     
   join.push(methods.map(({ name, parameters, block }) => (
     `${(opts.globalScope && name in opts.globalVars) ? `${opts.globalScope}.` : 'const '}${name} = (${parameters}) => {${block}};`
-  )).join('\n\n'));
+  )).join(opts.separator));
 
-  join.push(classes.map(classToJs).join('\n\n'));
+  join.push(classes.map(classToJs).join(opts.separator));
 
-  return join.join('\n\n');
+  return join.join(opts.separator);
 };
 
 const convertLiteralMethodsToCasts = (str) => {
@@ -289,20 +360,22 @@ const convertLiteralMethodsToCasts = (str) => {
  * Convert Java string to JavaScript string
  * @param {string} javaString - Java file contents
  * @param {object} [options]
- * @param {boolean} [options.p5] - Sets `globalScope` to `'p5'`, and add [p5 variable mappings](./p5_globals.js) to `globalVars`. 
- * @param {object} [options.globalVars] - Object keys are added to the `globalScope` object.
- *  If the value is a string, the variable is renamed to that string
+ * @param {object} [options.globalVars] - Object keys are added to the `globalScope` object. If the object value is a string, the variable is renamed to that string
  * @param {string} [options.globalScope] - If specified, variables in `globalVars` are appended to `globalScope` object
+ * @param {boolean} [options.p5] - Sets `globalScope` to `'p5'`, adds [p5 variable mappings](./p5_globals.js) to `globalVars`, and allows for global methods and variables
+ * @param {boolean} [options.ugly] - Don't beautify JavaScript code  
  * @param {function} [progress] - Callback on progress of conversion. Args are progress number (0 to 1), and a message string
  * @return {string} - Converted JavaScript
  */
-const javaToJs = (javaString, options = {}, progress) => {
-  if (typeof javaString !== 'string') throw 'java-to-javascript: First argument must be a string';
+const javaToJavascript = (javaString, options = {}, progress) => {
+  if (typeof javaString !== 'string') throw new Error('java-to-javascript: First argument must be a string');
 
+  // Reset opts parameters
   Object.assign(opts, DEFAULT_OPTIONS);
 
   if (options.globalVars) opts.globalVars = options.globalVars;
   if (options.globalScope) opts.globalScope = options.globalScope;
+  if (options.ugly) opts.separator = '';
   if (options.p5) {
     Object.assign(opts.globalVars, p5_options.globalVars, opts.globalVars);
     if (!opts.globalScope) opts.globalScope = 'p5';
@@ -312,7 +385,13 @@ const javaToJs = (javaString, options = {}, progress) => {
   
   if (options.p5) javaString = `class JavaJsTemp__ {${convertLiteralMethodsToCasts(javaString)}}`;
 
-  const javaAST = javaParser.parse(javaString);
+  let javaAST;
+  try {
+    javaAST = JavaAST.parse(javaString);
+  } catch (e) {
+    if (e.location) throw new Error(`SyntaxError around line ${e.location.start.line}: ${e.message}`);
+    else throw e;
+  }
 
   if (progress) progress(0.5, 'Converting to JavaScript');
 
@@ -320,16 +399,20 @@ const javaToJs = (javaString, options = {}, progress) => {
   if (options.p5) {
     jsString = globalsToJs(parseClass(javaAST.types[0], true));
   } else {
-    jsString = javaAST.types.map((globalClass) => classToJs(parseClass(globalClass))).join('\n\n');
+    jsString = javaAST.types.map((globalClass) => classToJs(parseClass(globalClass))).join(opts.separator);
   }
 
   if (progress) progress(0.75, 'Beautifying');
 
-  jsString = beautify.js_beautify(jsString, opts.beautifyOptions) + '\n';
+  if (!options.ugly) {
+    jsString = beautify.js_beautify(jsString, {
+      indent_size: 2,
+    }) + '\n';
+  }
 
   if (progress) progress(1.0, 'Success');
 
   return jsString;
 };
 
-module.exports = javaToJs;
+module.exports = javaToJavascript;

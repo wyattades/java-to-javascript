@@ -4,6 +4,7 @@ const rename = require('gulp-rename');
 const source = require('vinyl-source-stream');
 const buffer = require('vinyl-buffer');
 const uglify = require('gulp-uglify');
+const envify = require('envify/custom');
 const sourcemaps = require('gulp-sourcemaps');
 
 
@@ -15,6 +16,10 @@ gulp.task('build', () => (
     standalone: 'javaToJavascript',
     // debug: true,
   })
+  .transform(envify({
+    _: 'purge',
+    NODE_ENV: 'production',
+  }))
   .transform('babelify', {
     presets: ['@babel/preset-env'],
     sourceMaps: true,
