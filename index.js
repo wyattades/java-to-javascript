@@ -44,8 +44,7 @@ const handleError = (e) => {
   outEditor.setValue('');
   $progress.classList.add('error');
   $error.classList.add('active');
-  if (e.name === 'SyntaxError') $error.innerText = `SyntaxError around line ${e.location.start.line}: ${e.message}`;
-  else $error.innerText = `Error: ${e}`;
+  $error.innerText = e;
 };
 
 const setResult = (str) => {

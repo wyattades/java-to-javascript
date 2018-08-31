@@ -8,7 +8,7 @@ self.onmessage = ({ data: [ cmd, data, options ] }) => {
       });
       self.postMessage([ 'result', result ]);
     } catch (e) {
-      self.postMessage([ 'error', e ]);
+      self.postMessage([ 'error', e.message ]);
     }
   }
 };

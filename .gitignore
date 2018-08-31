@@ -1,6 +1,8 @@
 # Custom
 .vscode/
 jsconfig.json
+build/
+todo.txt
 
 # Logs
 logs
