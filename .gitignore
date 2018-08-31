@@ -2,6 +2,7 @@
 .vscode/
 jsconfig.json
 todo.txt
+build/
 
 # Logs
 logs
