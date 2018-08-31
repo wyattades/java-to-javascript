@@ -3,7 +3,7 @@
  */
 
 const beautify = require('js-beautify/js/lib/beautify');
-const JavaAST = require('./javaAST' + ''); // HACK to avoid intellisense on this file
+const JavaAST = require('./javaAST');
 const p5_options = require('./p5_options');
 
 
