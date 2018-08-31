@@ -1,6 +1,5 @@
 class Test {
-  constructor() {}
-  test() {
+  constructor() {
     let chars = [87, 937, 32];
   }
 }

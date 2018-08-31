@@ -1,83 +1,21 @@
-class Asteroid {
-  float x,y,xs,ys;
-  color c;
-  int d;
-  
-  Asteroid(float Tx, float Ty, float Txs, float Tys, int Td, color Tc) {
-    x = Tx;
-    y = Ty;
-    xs = Txs;
-    ys = Tys;
-    d = Td;
-    c = Tc;
-  }
-  
-  void move() {
-    x += xs;
-    y += ys;
-  }
-  
-  void display() {
-    fill(c);
-    ellipse(x,y,d,d);
-  }
-  
-  void reduce(int amount) {
-    d -= amount;
-    if (abs(xs) > 0.5) xs = xs/1.5;
-    if (abs(ys) > 0.5) ys = ys/1.5;
-  }
-  
-  boolean destroyed() {
-    if (d <= 50) {
-      return true;
-    }
-    else {
-      return false;
-    }
-  }
-  
-  boolean collideP(Player p) {
-    float dis = dist(x,y,p.x,p.y);
-    if (d/2 + p.d/2 > dis) {
-      return true;
-    }
-    else {
-      return false;
-    }
-  }
-  
-  boolean collideB(Bullet b) {
-    float dis = dist(x,y,b.x,b.y);
-    if (d/2 + b.d/2 > dis) {
-      return true;
-    }
-    else {
-      return false;
-    }
-  }
-}
-Player p;
+Player player;
 Badguy bg1;
 ArrayList<Bullet> bullets;
 ArrayList<Asteroid> asteroids;
 ArrayList<Powerup> powerups;
 
-PrintWriter output;
-
-boolean press,game,dead,spawn;
+boolean press,game,dead;
 int timeB,timeA,score,highscore;
 
 
 void setupGame() {
-  p = new Player(width/2,height/2,0,0,6,0.08,0.5,0.6,40,12,color(255,255,255));
+  player = new Player(width/2,height/2,0,0,6,0.08,0.5,0.6,40,12,color(255,255,255));
   bg1 = new Badguy(-400,height/2,0,0,60,color(0,255,0),0.6,3);
   dead = false;
   game = true;
   score = 0;
   bg1.destroyed = false;
   bg1.addedPu = false;
-  spawn = false;
   bullets = new ArrayList<Bullet>();
   asteroids = new ArrayList<Asteroid>();  
   powerups = new ArrayList<Powerup>(100);
@@ -85,20 +23,18 @@ void setupGame() {
 
 void setup() {
   size(1000,1000);
+  noCursor();
   textAlign(CENTER);
-  // Load highscore
-  int[] highscores = { 0 };
 }
 
 boolean checkCollide(float x1, float y1, int d1, float x2, float y2, int d2) {
   float DIST = dist(x1,y1,x2,y2);
-  if (float(d1)/2 + float(d2)/2 >= DIST) return true;
+  if (float(d1)/2.0 + float(d2)/2.0 >= DIST) return true;
   else return false;
 }
 
 void draw() {
   background(0);
-  noCursor();   
   if (game == true) {
     bg1.checkDestroyed();
     for (int i = bullets.size()-1; i >= 0; i--) {
@@ -122,7 +58,7 @@ void draw() {
       if (pu.faded()) {
         powerups.remove(pu);
       }
-      if (p.collideP(pu)) {
+      if (player.collideP(pu)) {
         score += pu.points;
         powerups.remove(pu);
       }
@@ -131,7 +67,7 @@ void draw() {
       Asteroid a = asteroids.get(j);
       a.move();
       a.display();
-      if (a.collideP(p)) {
+      if (a.collideP(player)) {
         dead = true;
       }
       if (a.destroyed()) {
@@ -154,14 +90,14 @@ void draw() {
     }
 
     if (dead == false) {
-      p.move();
-      p.display();
+      player.move();
+      player.display();
       if (score >= 10) {
         if (bg1.destroyed == false) {       
-          bg1.follow();   
+          bg1.follow(player);
           bg1.move();
           bg1.display();
-          if (bg1.collideP(p)) dead = true;
+          if (bg1.collideP(player)) dead = true;
         }
         if (bg1.destroyed == true && bg1.addedPu == false) {
           powerups.add(new Powerup(bg1.x,bg1.y,20,color(0,255,0),10,color(255)));  
@@ -171,19 +107,19 @@ void draw() {
       if (press == true) {
         if (millis() > timeB) {
           timeB = millis()+200;
-          float xpos = p.x+cos(p.angle+PI/2)*p.d;
-          float ypos = p.y+sin(p.angle+PI/2)*p.d;
-          bullets.add(new Bullet(xpos,ypos,12,12,7,color(255,255,255)));
+          float xpos = player.x+cos(player.angle+PI/2.0)*player.d;
+          float ypos = player.y+sin(player.angle+PI/2.0)*player.d;
+          bullets.add(new Bullet(xpos,ypos,12,player.angle,7,color(255,255,255)));
         }
       }
       if (millis() > timeA) {
         timeA = millis()+200;
-        float angle = random(0,2*PI);
-        float xpos = width/2+cos(angle)*sqrt(sq(height)+sq(width))/2+random(50,150);
-        float ypos = height/2+sin(angle)*sqrt(sq(height)+sq(width))/2+random(50,150);
-        float randomS = random(1,4);
-        float randomA = random(-90,90);
-        asteroids.add(new Asteroid(xpos,ypos,(-1)*randomS*cos(angle+randomA),random(-3,3)+(-1)*randomS*sin(angle+randomA),(int)random(70,200),color(180)));
+        float angle = random(0.0,2.0*PI);
+        float xpos = width/2.0+cos(angle)*sqrt(sq(height)+sq(width))/2+random(50.0,150.0);
+        float ypos = height/2.0+sin(angle)*sqrt(sq(height)+sq(width))/2+random(50.0,150.0);
+        float randomS = random(1.0,4.0);
+        float randomA = random(-90.0,90.0);
+        asteroids.add(new Asteroid(xpos,ypos,(-1)*randomS*cos(angle+randomA),random(-3.0,3.0)+(-1)*randomS*sin(angle+randomA),(int)random(70,200),color(180)));
       }  
     }
     if (dead == true) {
@@ -198,9 +134,9 @@ void draw() {
     stroke(255);
     text("Press [SPACE] to Begin",width/2,height/2);
     textSize(40);
-    text("HINT: use WASD to move your player, \n                   and use the mouse to shoot asteroids",width/2,height/2+200);
+    text("HINT: use WASD to move your player, \nand use the mouse to shoot asteroids",width/2,height/2+200);
   }
-  if (highscore <= score) highscore = score;
+  if (score >= highscore) highscore = score;
   fill(255);
   strokeWeight(2);
   textSize(40);
@@ -223,43 +159,37 @@ void mouseReleased() {
 
 void keyPressed() {
   if (keyCode == 'W') {
-    p.up = true;
+    player.up = true;
   }
   if (keyCode == 'A') {
-    p.left = true;
+    player.left = true;
   }
   if (keyCode == 'S') {
-    p.down = true;
+    player.down = true;
   }
   if (keyCode == 'D') {
-    p.right = true;
+    player.right = true;
   }
 }
 
 void keyReleased() {
   if (keyCode == 'W') {
-    p.up = false;
+    player.up = false;
   }
   if (keyCode == 'A') {
-    p.left = false;
+    player.left = false;
   }
   if (keyCode == 'S') {
-    p.down = false;
+    player.down = false;
   }
   if (keyCode == 'D') {
-    p.right = false;
+    player.right = false;
   }
   if (key == ' ') {
     if ((game == false && dead == false) || (game == false && dead == true)) {
       setupGame();
     }
   }
-}
-
-void exit() {
-  String[] hs = {str(highscore)};
-  saveStrings("highscore.txt",hs);
-  super.exit();
 }
 
   
@@ -319,7 +249,7 @@ class Badguy {
     d -= r;
   }
   
-  void follow() {
+  void follow(Player p) {
     if (x < p.x) xs += 0.1;
     if (x > p.x) xs += -0.1;
     if (y < p.y) ys += 0.1;
@@ -341,17 +271,77 @@ class Badguy {
     }
   }
 }
+
+class Asteroid {
+  float x,y,xs,ys;
+  color c;
+  int d;
+  
+  Asteroid(float Tx, float Ty, float Txs, float Tys, int Td, color Tc) {
+    x = Tx;
+    y = Ty;
+    xs = Txs;
+    ys = Tys;
+    d = Td;
+    c = Tc;
+  }
+  
+  void move() {
+    x += xs;
+    y += ys;
+  }
+  
+  void display() {
+    fill(c);
+    ellipse(x,y,d,d);
+  }
+  
+  void reduce(int amount) {
+    d -= amount;
+    if (abs(xs) > 0.5) xs = xs/1.5;
+    if (abs(ys) > 0.5) ys = ys/1.5;
+  }
+  
+  boolean destroyed() {
+    if (d <= 50) {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+  
+  boolean collideP(Player p) {
+    float dis = dist(x,y,p.x,p.y);
+    if (d/2 + p.d/2 > dis) {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+  
+  boolean collideB(Bullet b) {
+    float dis = dist(x,y,b.x,b.y);
+    if (d/2 + b.d/2 > dis) {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+}
   
 class Bullet {
   float x,y,xs,ys;
   int d;
   color c;
   
-  Bullet(float Tx,float Ty, float Txs, float Tys, int Td, color Tc) {
+  Bullet(float Tx,float Ty, float speed, float angle, int Td, color Tc) {
     x = Tx;
     y = Ty;
-    xs = Txs*cos(p.angle+PI/2);
-    ys = Tys*sin(p.angle+PI/2);
+    xs = speed*cos(angle+PI/2);
+    ys = speed*sin(angle+PI/2);
     d = Td;
     c = Tc;
   }
