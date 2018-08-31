@@ -32,7 +32,7 @@ p5.setup = () => {
 
 const checkCollide = (x1, y1, d1, x2, y2, d2) => {
   let DIST = p5.dist(x1, y1, x2, y2);
-  if ((d1) / 2.0 + (d2) / 2.0 >= DIST) {
+  if (p5.float(d1) / 2.0 + p5.float(d2) / 2.0 >= DIST) {
     return true;
   } else {
     return false;
@@ -228,17 +228,6 @@ class Badguy {
     this.maxs = Tmaxs;
   }
   move() {
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.bounce = 0;
-    this.maxs = 0;
-    this.d = 0;
-    this.c = null;
-    this.destroyed = false;
-    this.addedPu = false;
-
     this.x += this.xs;
     this.y += this.ys;
     if (this.xs >= this.maxs) {
@@ -271,47 +260,14 @@ class Badguy {
     }
   }
   checkDestroyed() {
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.bounce = 0;
-    this.maxs = 0;
-    this.d = 0;
-    this.c = null;
-    this.destroyed = false;
-    this.addedPu = false;
-
     if (this.d <= 16) {
       this.destroyed = true;
     }
   }
   reduce(r) {
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.bounce = 0;
-    this.maxs = 0;
-    this.d = 0;
-    this.c = null;
-    this.destroyed = false;
-    this.addedPu = false;
-
     this.d -= r;
   }
   follow(p) {
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.bounce = 0;
-    this.maxs = 0;
-    this.d = 0;
-    this.c = null;
-    this.destroyed = false;
-    this.addedPu = false;
-
     if (this.x < p.x) {
       this.xs += 0.1;
     }
@@ -326,32 +282,10 @@ class Badguy {
     }
   }
   display() {
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.bounce = 0;
-    this.maxs = 0;
-    this.d = 0;
-    this.c = null;
-    this.destroyed = false;
-    this.addedPu = false;
-
     p5.fill(this.c);
     p5.ellipse(this.x, this.y, this.d, this.d);
   }
   collideP(p) {
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.bounce = 0;
-    this.maxs = 0;
-    this.d = 0;
-    this.c = null;
-    this.destroyed = false;
-    this.addedPu = false;
-
     let dis = p5.dist(this.x, this.y, p.x, p.y);
     if (this.d / 2 + p.d / 2 > dis) {
       return true;
@@ -378,35 +312,14 @@ class Asteroid {
     this.c = Tc;
   }
   move() {
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.c = null;
-    this.d = 0;
-
     this.x += this.xs;
     this.y += this.ys;
   }
   display() {
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.c = null;
-    this.d = 0;
-
     p5.fill(this.c);
     p5.ellipse(this.x, this.y, this.d, this.d);
   }
   reduce(amount) {
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.c = null;
-    this.d = 0;
-
     this.d -= amount;
     if (p5.abs(this.xs) > 0.5) {
       this.xs = this.xs / 1.5;
@@ -416,13 +329,6 @@ class Asteroid {
     }
   }
   destroyed() {
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.c = null;
-    this.d = 0;
-
     if (this.d <= 50) {
       return true;
     } else {
@@ -430,13 +336,6 @@ class Asteroid {
     }
   }
   collideP(p) {
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.c = null;
-    this.d = 0;
-
     let dis = p5.dist(this.x, this.y, p.x, p.y);
     if (this.d / 2 + p.d / 2 > dis) {
       return true;
@@ -445,13 +344,6 @@ class Asteroid {
     }
   }
   collideB(b) {
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.c = null;
-    this.d = 0;
-
     let dis = p5.dist(this.x, this.y, b.x, b.y);
     if (this.d / 2 + b.d / 2 > dis) {
       return true;
@@ -478,35 +370,14 @@ class Bullet {
     this.c = Tc;
   }
   move() {
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.d = 0;
-    this.c = null;
-
     this.x += this.xs;
     this.y += this.ys;
   }
   display() {
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.d = 0;
-    this.c = null;
-
     p5.fill(this.c);
     p5.ellipse(this.x, this.y, this.d, this.d);
   }
   outside() {
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.d = 0;
-    this.c = null;
-
     if (this.x - this.d / 2 > p5.width || this.x + this.d / 2 < 0 || this.y - this.d / 2 > p5.height || this.y + this.d / 2 < 0) {
       return true;
     } else {
@@ -548,24 +419,6 @@ class Player {
     this.c = Tc;
   }
   collideP(pu) {
-    this.up = false;
-    this.down = false;
-    this.left = false;
-    this.right = false;
-    this.faster = false;
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.maxs = 0;
-    this.slow = 0;
-    this.fast = 0;
-    this.bounce = 0;
-    this.angle = 0;
-    this.d = 0;
-    this.cd = 0;
-    this.c = null;
-
     let dis = p5.dist(this.x, this.y, pu.x, pu.y);
     if (this.d / 2 + pu.d / 2 > dis) {
       return true;
@@ -574,24 +427,6 @@ class Player {
     }
   }
   display() {
-    this.up = false;
-    this.down = false;
-    this.left = false;
-    this.right = false;
-    this.faster = false;
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.maxs = 0;
-    this.slow = 0;
-    this.fast = 0;
-    this.bounce = 0;
-    this.angle = 0;
-    this.d = 0;
-    this.cd = 0;
-    this.c = null;
-
     p5.strokeWeight(1.5);
     p5.stroke(this.c);
     p5.fill(0);
@@ -611,24 +446,6 @@ class Player {
     p5.line(p5.mouseX, p5.mouseY - this.cd / 2, p5.mouseX, p5.mouseY + this.cd / 2);
   }
   bounceOffBoundary() {
-    this.up = false;
-    this.down = false;
-    this.left = false;
-    this.right = false;
-    this.faster = false;
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.maxs = 0;
-    this.slow = 0;
-    this.fast = 0;
-    this.bounce = 0;
-    this.angle = 0;
-    this.d = 0;
-    this.cd = 0;
-    this.c = null;
-
     if (this.x - this.d / 2 <= 0) {
       this.x = this.d / 2;
       this.xs = this.xs * -this.bounce;
@@ -647,24 +464,6 @@ class Player {
     }
   }
   maxSpeed() {
-    this.up = false;
-    this.down = false;
-    this.left = false;
-    this.right = false;
-    this.faster = false;
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.maxs = 0;
-    this.slow = 0;
-    this.fast = 0;
-    this.bounce = 0;
-    this.angle = 0;
-    this.d = 0;
-    this.cd = 0;
-    this.c = null;
-
     if (this.xs >= this.maxs) {
       this.xs = this.maxs;
     }
@@ -679,24 +478,6 @@ class Player {
     }
   }
   keyMove() {
-    this.up = false;
-    this.down = false;
-    this.left = false;
-    this.right = false;
-    this.faster = false;
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.maxs = 0;
-    this.slow = 0;
-    this.fast = 0;
-    this.bounce = 0;
-    this.angle = 0;
-    this.d = 0;
-    this.cd = 0;
-    this.c = null;
-
     if (this.up) {
       this.faster = true;
       this.ys -= this.fast;
@@ -723,24 +504,6 @@ class Player {
     }
   }
   move() {
-    this.up = false;
-    this.down = false;
-    this.left = false;
-    this.right = false;
-    this.faster = false;
-    this.x = 0;
-    this.y = 0;
-    this.xs = 0;
-    this.ys = 0;
-    this.maxs = 0;
-    this.slow = 0;
-    this.fast = 0;
-    this.bounce = 0;
-    this.angle = 0;
-    this.d = 0;
-    this.cd = 0;
-    this.c = null;
-
     this.keyMove();
     this.bounceOffBoundary();
     this.maxSpeed();
@@ -788,41 +551,14 @@ class Powerup {
     this.cf = Tcf;
   }
   fade() {
-    this.x = 0;
-    this.y = 0;
-    this.d = 0;
-    this.points = 0;
-    this.f = 255;
-    this.cs = null;
-    this.cf = null;
-    this.puAdded = false;
-
     this.f--;
   }
   display() {
-    this.x = 0;
-    this.y = 0;
-    this.d = 0;
-    this.points = 0;
-    this.f = 255;
-    this.cs = null;
-    this.cf = null;
-    this.puAdded = false;
-
     p5.fill(this.cf, this.f);
     p5.stroke(this.cs, this.f);
     p5.ellipse(this.x, this.y, this.d, this.d);
   }
   faded() {
-    this.x = 0;
-    this.y = 0;
-    this.d = 0;
-    this.points = 0;
-    this.f = 255;
-    this.cs = null;
-    this.cf = null;
-    this.puAdded = false;
-
     if (this.f <= 10) {
       return true;
     } else {

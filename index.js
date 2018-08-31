@@ -245,7 +245,7 @@ const parseClass = (class_, isGlobal) => {
     }, parseModifiers(method.modifiers));
 
     if (method.constructor) {
-      data.constructor = true;
+      data.isConstructor = true;
       data.name = 'constructor';
       data.static = false;
     }
@@ -297,11 +297,11 @@ const classToJs = ({ name: className, vars, superclass, methods, abstract }) => 
 
   let addedConstructor = false;
 
-  const addMethod = ({ name, parameters, block, constructor, static: static_ }, addInitVars) => {
-    if (constructor) addedConstructor = true;
+  const addMethod = ({ name, parameters, block, isConstructor, static: static_ }, addInitVars) => {
+    if (isConstructor) addedConstructor = true;
     if (static_) staticVars.push(`${className}.${name}=(${parameters})=>{${block}};`);
     else {
-      const preblock = (constructor && addInitVars && initVars.length) ? initVars.join('') + (block ? opts.separator : '') : ''
+      const preblock = (isConstructor && addInitVars && initVars.length) ? (initVars.join('') + (block ? opts.separator : '')) : '';
       classProps.push(`${name}(${parameters}){${preblock}${block}}`);
     }
   };
@@ -333,7 +333,7 @@ const classToJs = ({ name: className, vars, superclass, methods, abstract }) => 
     }
   }
 
-  if (!addedConstructor && initVars.length) classProps.unshift(`constructor(){${initVars.join('') + opts.separator}}`);
+  if (!addedConstructor && initVars.length) classProps.unshift(`constructor(){${initVars.join('')}}`);
 
   return `class ${className}${superclass ? (' extends ' + superclass) : ''}{${classProps.join('')}}${staticVars.join('')}`;
 };
@@ -352,8 +352,10 @@ const globalsToJs = ({ vars, methods, classes }) => {
   return join.join(opts.separator);
 };
 
-const convertLiteralMethodsToCasts = (str) => {
-  return str.replace(/(int|float|char|long|double)\s*\(/g, '($1)(');
+const fixP5 = (str) => {
+  return str
+  .replace(/(int|float|byte|char|boolean)\s*\(/g, '$1$$(') // Temporarily change name of literal method calls e.g. int(x) -> int$(x)
+  .replace(/new\s+PVector\s*\(/g, 'createVector(');
 };
 
 /**
@@ -383,7 +385,7 @@ const javaToJavascript = (javaString, options = {}, progress) => {
 
   if (progress) progress(0, 'Parsing Java');
   
-  if (options.p5) javaString = `class JavaJsTemp__ {${convertLiteralMethodsToCasts(javaString)}}`;
+  if (options.p5) javaString = `class JavaJsTemp__ {${fixP5(javaString)}}`;
 
   let javaAST;
   try {

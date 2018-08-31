@@ -8,6 +8,13 @@ module.exports = {
     size: 'createCanvas',
     println: 'print',
 
+    // Fix literal methods
+    int$: 'int',
+    float$: 'float',
+    byte$: 'byte',
+    char$: 'char',
+    boolean$: 'boolean',
+
     // Methods
     alpha: true,
     blue: true,
