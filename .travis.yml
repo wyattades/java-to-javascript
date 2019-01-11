@@ -11,5 +11,5 @@ deploy:
   api_key:
     secure: XefJKW9AWfe8EvgIeZmrqDae/qW1XnQAa9tadWksexOnK9AfD2Oti3bwFHB6AddorBElYt5Iey/PL0DNxGUQ7/zMhevzQLIgIZnyLwBFHgnhzIlJHI6KGbc1CAfj9sqXX1V+KE1EPwAFiKe21gM6EurEtz9/C5gC5qIuBcrkjuvrXuHCk7eip+tAOOLJ/DChKKa/X7Y9QUSS7yLKKUkKdrJt/4lZ2cSOI5rIozbImaGF9hFQxBPyFbigEOPRCCZFS2BYr6rRwSIr3JmanY8511qiSBC+87d60/g3dApXQP1ZXrBEAKMZro8Zglt1JqtRuS1DSMIoJB0qfpJ9+Svx7krRhVBhK2gfo7ghw1vMsflz02iUSileZgGOIKp1xj5ZkNkh9oZVzARoLZLFP4ZO+jklJiYetoiYIZmBeUjaVKsUM3OCz6eSfixU0HOMa8TzjInxHHSpeJfxtHkXe1Cb/IOAdqTI3oc3l/v4yEpG/R7CkdV5DNjJ1I429A3hD+2uH18TH7zdc18g9KG3iyO0wg0u3JvkxSllVym8PaqrKWdcJw9+Ee2k6M0NP4n1fhyRfHiPqa2vye0+cK6PbktcpwgcLvcuwB1ALrLKfX6O5MLgp2FZ5MyEjW9CU0MH+82N6PHSbj4s3H/S5yZjG80JCCTnTVRSmV1pe98kUHpqIko=
   on:
-    condition: $TRAVIS_COMMIT_MESSAGE =~ ^v[0-9]+\.[0-9]+\.[0-9]+
+    tags: true
     repo: wyattades/java-to-javascript
