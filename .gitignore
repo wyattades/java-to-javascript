@@ -3,6 +3,7 @@
 jsconfig.json
 todo.txt
 build/
+__tmp*
 
 # Logs
 logs
