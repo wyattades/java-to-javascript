@@ -1,4 +1,8 @@
 # Java to JavaScript
+
+![](https://travis-ci.org/wyattades/java-to-javascript.svg?branch=master)
+[![](https://img.shields.io/npm/v/java-to-javascript.svg)](https://www.npmjs.com/package/java-to-javascript)
+
 > Convert Java Classes to ES6 Classes.
 
 Translates: classes, methods, variables, statics, and more!
