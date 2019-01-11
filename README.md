@@ -1,5 +1,5 @@
 # Java to JavaScript
-| Convert Java Classes to ES6 Classes.
+> Convert Java Classes to ES6 Classes.
 
 Translates: classes, methods, variables, statics, and more!
 
