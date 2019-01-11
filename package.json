@@ -24,7 +24,7 @@
     "build-all": "npm run build && npm run examples",
     "build": "gulp build",
     "examples": "bash -c 'for file in ./examples/*.java; do node ./cli.js $file $([[ \"$file\" = *\"p5\"* ]] && echo --p5); done'",
-    "deploy": "VERSION=$(node -p 'require(\"./package.json\").version') && [ $VERSION = $(npm view java-to-javascript version) ] && exit 1 || git tag \"v$VERSION\" && git push --follow-tags"
+    "deploy": "VERSION=$(node -p 'require(\"./package.json\").version') && [ $VERSION = $(npm view java-to-javascript version) ] && exit 1 || git tag \"v$VERSION\" && git push --follow-tags origin master"
   },
   "dependencies": {
     "commander": "^2.19.0",
