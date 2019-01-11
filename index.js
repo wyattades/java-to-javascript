@@ -210,7 +210,7 @@ const parseClass = (class_, isGlobal) => {
         }
         return `switch(${parseExpr(stat.expression)}){${switchStats}}`;
       case 'AssertStatement':
-        return `if (!(${parseExpr(stat.expression)})) throw ${stat.message ? parseExpr(stat.message) : '\'Assertion Failed\''}`;
+        return `if(!(${parseExpr(stat.expression)}))throw ${stat.message ? parseExpr(stat.message) : '\'Assertion Failed\''}`;
       case 'ThrowStatement':
         return `throw ${parseExpr(stat.expression)}`;
       case 'TryStatement':
@@ -355,7 +355,8 @@ const globalsToJs = ({ vars, methods, classes }) => {
 const fixP5 = (str) => {
   return str
   .replace(/(int|float|byte|char|boolean)\s*\(/g, '$1$$(') // Temporarily change name of literal method calls e.g. int(x) -> int$(x)
-  .replace(/new\s+PVector\s*\(/g, 'createVector(');
+  .replace(/[^"](#[a-f0-9]{6,8})[^"]/gi, '\'$1\'') // Replace silly hex notation with string
+  .replace(/new\s+PVector\s*\(/g, 'createVector('); // use p5 vector initializer
 };
 
 /**

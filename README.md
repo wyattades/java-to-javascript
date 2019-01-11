@@ -1,5 +1,5 @@
 # Java to JavaScript
-Convert Java Classes to ES6 Classes.
+| Convert Java Classes to ES6 Classes.
 
 Translates: classes, methods, variables, statics, and more!
 
@@ -72,7 +72,7 @@ var jsString = javaToJavascript( /* params */ );
 | [options.globalScope] | <code>string</code> | If specified, variables in `globalVars` are appended to `globalScope` object |
 | [options.p5] | <code>boolean</code> | Sets `globalScope` to `'p5'`, adds [p5 variable mappings](./p5_globals.js) to `globalVars`, and allows for global methods and variables |
 | [options.ugly] | <code>boolean</code> | Don't beautify JavaScript code |
-| [progress] | <code>function</code> | Callback on progress of conversion. Args are progress value (0 to 1), and a message string |
+| [progress] | <code>function</code> | Callback on progress of conversion. Args are progress value (0.0 to 1.0), and a message string |
 
 ## Command Line API
 ```

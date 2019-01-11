@@ -34,17 +34,21 @@ export class ArrayList extends List {}
 class Map {
   constructor(a) {
     this.obj = {};
-    if (a instanceof Map) Object.assign(this.obj, a);
+    if (a instanceof Map) Object.assign(this.obj, a.obj);
   }
   containsKey(key) { return key in this.obj; }
-  containsValue(val) { return Object.values(this.obj).indexOf(val) !== -1; }
+  containsValue(val) {
+    for (const key in this.obj)
+      if (this.obj[key] === val) return true;
+    return false;
+  }
   put(key, val) { this.obj[key] = val; }
   putAll(obj) { Object.assign(this.obj, obj) }
   get(key) { return this.obj[key] === undefined ? null : this.obj[key]; }
   size() { return Object.keys(this.obj).length; }
   remove(key) { delete this.obj[key]; }
   clear() { this.obj = {}; }
-  clone() { return new Map(this.obj); }
+  clone() { return new Map(this); }
   values() { return Object.values(this.obj); }
   keySet() { return Object.keys(this.obj); }
 }
