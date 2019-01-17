@@ -1,6 +1,7 @@
 language: node_js
 node_js: 10
 cache: npm
+if: tag IS present
 install:
   - npm install
   - npm run build-all

@@ -3,3 +3,4 @@ examples/
 gulpfile.js
 jsconfig.json
 todo.txt
+!build/
