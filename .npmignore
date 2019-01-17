@@ -1,6 +1,0 @@
-examples/
-.vscode/
-gulpfile.js
-jsconfig.json
-todo.txt
-!build/

@@ -1,6 +1,6 @@
 {
   "name": "java-to-javascript",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "Convert Java Classes to ES6 Classes",
   "keywords": [
     "java",
@@ -15,6 +15,12 @@
   "module": "index.js",
   "main": "build/java-to-javascript.min.js",
   "bin": "cli.js",
+  "files": [
+    "build/",
+    "examples/",
+    "lib/",
+    "cli.js"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/wyattades/java-to-javascript"

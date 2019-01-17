@@ -12,7 +12,7 @@ const DEST = './build';
 
 gulp.task('build', () => (
   browserify({
-    entries: './index.js',
+    entries: './lib/index.js',
     standalone: 'javaToJavascript',
     // debug: true,
   })
