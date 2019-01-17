@@ -1,6 +1,6 @@
 {
   "name": "java-to-javascript",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "description": "Convert Java Classes to ES6 Classes",
   "keywords": [
     "java",
